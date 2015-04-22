@@ -54,15 +54,15 @@
 
 
 typedef struct pattern {
-  /* this defines the x-part of a training example, e.g. the structure
-     for storing a natural language sentence in NLP parsing */
-  int add_your_variables_here;
+  int n; //num of frames
+  double **utterance;
 } PATTERN;
 
 typedef struct label {
   /* this defines the y-part (the label) of a training example,
      e.g. the parse tree of the corresponding sentence. */
-  int add_your_variables_here;
+  int n;
+  int *phone;
 } LABEL;
 
 typedef struct structmodel {
@@ -72,7 +72,8 @@ typedef struct structmodel {
   double walpha;
   /* other information that is needed for the stuctural model can be
      added here, e.g. the grammar rules for NLP parsing */
-  int add_your_variables_here;
+  int num_features;
+  int num_phones;
 } STRUCTMODEL;
 
 typedef struct struct_learn_parm {
