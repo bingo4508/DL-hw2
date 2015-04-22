@@ -74,7 +74,7 @@ void        svm_struct_classify_api_exit()
      that might be necessary. */
 }
 
-SAMPLE      read_struct_examples(char *file, STRUCT_LEARN_PARM *sparm)
+SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
 {
   /* Reads struct examples and returns them in sample. The number of
      examples must be written into sample.n */
@@ -82,12 +82,74 @@ SAMPLE      read_struct_examples(char *file, STRUCT_LEARN_PARM *sparm)
   EXAMPLE  *examples;
   long     n;       /* number of examples */
 
-  n=100; /* replace by appropriate number of examples */
-  examples=(EXAMPLE *)my_malloc(sizeof(EXAMPLE)*n);
+  n=0; /* replace by appropriate number of examples */
+  
 
+  
+  EXAMPLE temp[1000];
+  
   /* fill in your code here */
+  fstream fin;
+  int j=0;
+  vector<string> CurrentNameT;
+  string CurrentName;
+  string LastName="Initial";
+  int UtteranceN=0;
+  int TempLabel;
+  double *TempUtterance[1000];
+  int TempLabelS[1000];
+  ifstream input(fname, ifstream::in);
+  ifstream input2(fname, ifstream::in);
+  string line2;
+  getline(input2, line2);
+  
+  	for(string line; getline(input, line);){
+          string line2;
+          getline(input2, line2);
+          //cout << line<< "\n"; 
+          if(j>1000){break;}
+          j++;
+		  vector<string> x =split(line, " ");
+		  int feature_size = x.size()-2;
+		  double *TempVector = (double*) malloc(sizeof(double)*(x.size()-2));   /////////////////////////////my
 
-  sample.n=n;
+		  
+		  CurrentNameT=split(x[0], "_");
+          CurrentName=CurrentNameT[0]+"_"+CurrentNameT[1];	  
+		  for(int i=1;i<x.size()-1;i++){TempVector[i-1]=atof(x[i].c_str());}
+		  TempLabel=atoi(x[x.size()-1].c_str());
+		  
+	      if((CurrentName==LastName||LastName=="Initial")&&!input2.eof())
+	      {     
+                TempUtterance[UtteranceN]=TempVector;
+                TempLabelS[UtteranceN]=TempLabel;
+                UtteranceN++;                                    
+          }
+          else
+          {   
+              //double *TempUtterance2[UtteranceN];
+              double **TempUtterance2 = (double**) malloc(sizeof(double*)*UtteranceN); /////////////////////////////my
+              //int TempLabelS2[UtteranceN];
+              int *TempLabelS2 = (int*) malloc(sizeof(int)*UtteranceN);   /////////////////////////////my
+              for(int i=0;i<UtteranceN-1;i++){TempUtterance2[i]=TempUtterance[i];	}
+              for(int i=0;i<UtteranceN-1;i++){TempLabelS2[i]=TempLabelS[i];}
+              temp[n].x.utterance=TempUtterance2;
+              temp[n].x.n=UtteranceN;
+              temp[n].y.phone=TempLabelS2;
+              temp[n].y.n=UtteranceN;
+              temp[n].y.id=(char*)malloc(sizeof(char)*30); 
+              strcpy(temp[n].y.id,LastName.c_str());
+              n++;
+              UtteranceN=0;
+              TempUtterance[UtteranceN]=TempVector;
+              TempLabelS[UtteranceN]=TempLabel;
+              UtteranceN++;                  
+          }
+          LastName=CurrentName;
+    }
+  examples=(EXAMPLE *)malloc(sizeof(EXAMPLE)*n);//my
+  for(int i=0;i<n-1;i++){examples[i]=temp[i]; }
+  sample.n=n;		  
   sample.examples=examples;
   return(sample);
 }
@@ -340,6 +402,7 @@ int         empty_label(LABEL y)
 SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
 		 STRUCT_LEARN_PARM *sparm)
 {
+    
   /* Returns a feature vector describing the match between pattern x
      and label y. The feature vector is returned as a list of
      SVECTOR's. Each SVECTOR is in a sparse representation of pairs
@@ -360,8 +423,36 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
      that ybar!=y that maximizes psi(x,ybar,sm)*sm.w (where * is the
      inner vector product) and the appropriate function of the
      loss + margin/slack rescaling method. See that paper for details. */
-  SVECTOR *fvec=NULL;
-
+     
+  SVECTOR *fvec=(SVECTOR*) malloc(sizeof(SVECTOR));
+  
+  WORD *TempWord = (WORD*) malloc(sizeof(WORD)*((sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)+1));
+  int lastLabel=-1;
+  int currentLabel=-1;
+   
+  
+  for(int i=1;i<(sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones);i++)
+  {
+          TempWord[i-1].wnum=i;
+          TempWord[i-1].weight=0;
+  }
+  TempWord[(sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)].wnum=0;
+  
+  for(int i=0;i<x.n-1;i++)
+  {
+   for(int j=0;j<(sm->num_features-1);j++)
+   {
+           //cout <<x.utterance[i][0]<<endl; 
+           currentLabel=y.phone[i];
+           TempWord[j+(sm->num_features)*y.phone[i]].weight+=x.utterance[i][j];
+           if(lastLabel>1)
+           {
+           TempWord[(sm->num_features)*(sm->num_phones)+(sm->num_phones)*lastLabel+currentLabel].weight++;
+           }
+           lastLabel=currentLabel;
+   }         
+  }
+  (*fvec).words=TempWord;
   /* insert code for computing the feature vector for x and y here */
 
   return(fvec);
