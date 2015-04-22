@@ -22,6 +22,10 @@
 #include "svm_struct/svm_struct_common.h"
 #include "svm_struct_api.h"
 
+#define SM_PSI_SIZE ??
+#define SM_NUM_FEATURES 69
+#define SM_NUM_PHONMES 48
+
 /************ Utility ***********************************/
 double dot(double *x, double *y, int size){
     double s=0;
@@ -98,7 +102,9 @@ void        init_struct_model(SAMPLE sample, STRUCTMODEL *sm,
      weights that can be learned. Later, the weight vector w will
      contain the learned weights for the model. */
 
-  sm->sizePsi=100; /* replace by appropriate number of features */
+  sm->sizePsi=SM_PSI_SIZE; /* replace by appropriate number of features */
+  sm->num_features = SM_NUM_FEATURES;
+  sm->num_phones = SM_NUM_PHONMES;
 }
 
 CONSTSET    init_struct_constraints(SAMPLE sample, STRUCTMODEL *sm, 
@@ -390,6 +396,9 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
   /* Reads structural model sm from file file. This function is used
      only in the prediction module, not in the learning module. */
      STRUCTMODEL sm;
+	 sm.sizePsi=SM_PSI_SIZE; /* replace by appropriate number of features */
+	 sm.num_features = SM_NUM_FEATURES;
+	 sm.num_phones = SM_NUM_PHONMES
      FILE *fp = fopen(file, "r");
      fscanf(fp, "%d", &sm.sizePsi);
      sm.w = my_malloc(size(double)*sm.sizePsi);
@@ -402,9 +411,9 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 void        write_label(FILE *fp, LABEL y)
 {
   /* Writes label y to file handle fp. */
-  fprintf(fp, "%s, %d, ", y.id, y.frameSize);
-  for (int i = 0; i < y.frameSize; i++)
-  	fprintf(fp, "%d ", y.phonmeIdx[i]);
+  fprintf(fp, "%s, %d, ", y.id, y.n);
+  for (int i = 0; i < y.n; i++)
+  	fprintf(fp, "%d ", y.phone[i]);
   fprintf(fp, "\n");
 } 
 
@@ -446,7 +455,7 @@ void outputResult(File *beforeTrim, char *afterTrim)
 		}
 		fprintf(outFp, "\n");
 	}
-	fclose(fp);
+	fclose(outFp);
 }
 
 void        free_pattern(PATTERN x) {
