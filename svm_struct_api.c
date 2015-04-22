@@ -22,7 +22,7 @@
 #include "svm_struct/svm_struct_common.h"
 #include "svm_struct_api.h"
 
-#define SM_PSI_SIZE ??
+#define SM_PSI_SIZE 5616
 #define SM_NUM_FEATURES 69
 #define SM_NUM_PHONMES 48
 
@@ -36,7 +36,7 @@ double dot(double *x, double *y, int size){
 }
 
 void ** new_2d_array(int rows, int cols, int size){
-    void **a = calloc(rows, sizeof(void*));
+    void **a = (void **)calloc(rows, sizeof(void*));
     int i;
     for(i = 0; i < rows; i++)
         a[i] = calloc(cols, size);
@@ -303,7 +303,7 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
                 }
                 delta[t][j] = p + dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
             }
-	    if(y.bar.phone[t]==j)delta[t][j]++;
+	    if(ybar.phone[t]==j)delta[t][j]++;
         }
 
     // Back-tracking
@@ -438,7 +438,7 @@ void        write_struct_model(char *file, STRUCTMODEL *sm,
 {
   /* Writes structural model sm to file file. */
   FILE *fp = fopen(file, "w");
-  fprintf(fp, "%d\n", sm->sizePsi);
+  fprintf(fp, "%ld\n", sm->sizePsi);
   int i;
   for (i = 0; i < sm->sizePsi; i++)
   	fprintf(fp, "%lf ", sm->w[i]);
@@ -452,10 +452,10 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
      STRUCTMODEL sm;
 	 sm.sizePsi=SM_PSI_SIZE; /* replace by appropriate number of features */
 	 sm.num_features = SM_NUM_FEATURES;
-	 sm.num_phones = SM_NUM_PHONMES
+	 sm.num_phones = SM_NUM_PHONMES;
      FILE *fp = fopen(file, "r");
-     fscanf(fp, "%d", &sm.sizePsi);
-     sm.w = my_malloc(size(double)*sm.sizePsi);
+     fscanf(fp, "%ld", &sm.sizePsi);
+     sm.w = my_malloc(sizeof(double)*sm.sizePsi);
 	 int i;
      for (i = 0; i < sm.sizePsi; i++)
      	fscanf(fp, "%lf", &sm.w[i]);
@@ -473,7 +473,7 @@ void        write_label(FILE *fp, LABEL y)
   fprintf(fp, "\n");
 } 
 
-void outputResult(File *beforeTrim, char *afterTrim)
+void outputResult(FILE *beforeTrim, char *afterTrim)
 {
 	FILE *outFp = fopen(afterTrim, "w");
 	fprintf(outFp, "id,phonme_sequence\n");
@@ -482,27 +482,27 @@ void outputResult(File *beforeTrim, char *afterTrim)
 	char id[40];
 	int phonmeIdx;
 	int frameSize;
-	bool isSilHead;
+	int isSilHead;
 	int prePhmIdx;
 	int i;
 	while(fscanf(beforeTrim, "%s, ", id) != EOF)
 	{
 		fprint(outFp, "%s,", id);
-		fscanf(beforeTrim, "%d", &frameSize)
-		isSilHead = true;
+		fscanf(beforeTrim, "%ld", &frameSize);
+		isSilHead = 1;
 		prePhmIdx = -1;
 		for (i = 0; i < frameSize; i++)
 		{
-			fscanf(beforeTrim, "%d", &phonmeIdx)
+			fscanf(beforeTrim, "%d", &phonmeIdx);
 			if (isSilHead && phonmeIdx != 36)	//first not-sil phonme
-				isSilHead = false;
+				isSilHead = 0;
 			if (!isSilHead && prePhmIdx != phonmeIdx)
 			{
 				if (phonmeIdx != 36)
 				{
 					if (prePhmIdx == 36)
 						fprintf(outFp, "K");
-					if (phonme < 26)
+					if (phonmeIdx < 26)
 						fprintf(outFp, "%c", (char)(phonmeIdx+'a'));
 					else
 						fprintf(outFp, "%c", (char)(phonmeIdx-26+'A'));

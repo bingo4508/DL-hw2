@@ -1,4 +1,7 @@
 *.un~
 *~
 *.pyc
+*.o
+*.swp
+
 data/
