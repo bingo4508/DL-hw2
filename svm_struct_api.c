@@ -378,18 +378,76 @@ void        write_struct_model(char *file, STRUCTMODEL *sm,
 			       STRUCT_LEARN_PARM *sparm)
 {
   /* Writes structural model sm to file file. */
+  FILE *fp = fopen(file, "w");
+  fprintf(fp, "%d\n", sm->sizePsi);
+  for (int i = 0; i < sm->sizePsi; i++)
+  	fprintf(fp, "%lf ", sm->w[i]);
+  fclose(fp);
 }
 
 STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 {
   /* Reads structural model sm from file file. This function is used
      only in the prediction module, not in the learning module. */
+     STRUCTMODEL sm;
+     FILE *fp = fopen(file, "r");
+     fscanf(fp, "%d", &sm.sizePsi);
+     sm.w = my_malloc(size(double)*sm.sizePsi);
+     for (int i = 0; i < sm.sizePsi; i++)
+     	fscanf(fp, "%lf", &sm.w[i]);
+     fclose(fp);
+     return sm;
 }
 
 void        write_label(FILE *fp, LABEL y)
 {
   /* Writes label y to file handle fp. */
+  fprintf(fp, "%s, %d, ", y.id, y.frameSize);
+  for (int i = 0; i < y.frameSize; i++)
+  	fprintf(fp, "%d ", y.phonmeIdx[i]);
+  fprintf(fp, "\n");
 } 
+
+void outputResult(File *beforeTrim, char *afterTrim)
+{
+	FILE *outFp = fopen(afterTrim, "w");
+	fprintf(outFp, "id,phonme_sequence\n");
+	rewind(beforeTrim);
+	
+	char id[40];
+	int phonmeIdx;
+	int frameSize;
+	bool isSilHead;
+	int prePhmIdx;
+	while(fscanf(beforeTrim, "%s, ", id) != EOF)
+	{
+		fprint(outFp, "%s,", id);
+		fscanf(beforeTrim, "%d", &frameSize)
+		isSilHead = true;
+		prePhmIdx = -1;
+		for (int i = 0; i < frameSize; i++)
+		{
+			fscanf(beforeTrim, "%d", &phonmeIdx)
+			if (isSilHead && phonmeIdx != 36)	//first not-sil phonme
+				isSilHead = false;
+			if (!isSilHead && prePhmIdx != phonmeIdx)
+			{
+				if (phonmeIdx != 36)
+				{
+					if (prePhmIdx == 36)
+						fprintf(outFp, "K");
+					if (phonme < 26)
+						fprintf(outFp, "%c", (char)(phonmeIdx+'a'));
+					else
+						fprintf(outFp, "%c", (char)(phonmeIdx-26+'A'));
+				}
+				prePhmIdx = phonmeIdx;
+			}
+		}
+		fprintf(outFp, "\n");
+	}
+	fclose(fp);
+}
 
 void        free_pattern(PATTERN x) {
   /* Frees the memory of x. */
