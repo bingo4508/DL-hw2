@@ -193,12 +193,14 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
     // Back-tracking
     double p = -1e9;
     for (j=0; j<num_state; ++j)
-        if (delta[num_obsrv-1][j] > p)
+        if (delta[num_obsrv-1][j] > p){
             p = delta[num_obsrv-1][j];
             y.phone[num_obsrv-1] = j;
+	}
 
-    for (t=num_obsrv-1; t>0; --t)
+    for (t=num_obsrv-1; t>0; --t){
         y.phone[t-1] = track[t][y.phone[t]];
+    }
 
     // Free memory
     for(i=0;i<num_obsrv;++i){
