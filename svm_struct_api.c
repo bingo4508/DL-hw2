@@ -487,8 +487,8 @@ void outputResult(FILE *beforeTrim, char *afterTrim)
 	int i;
 	while(fscanf(beforeTrim, "%s, ", id) != EOF)
 	{
-		fprint(outFp, "%s,", id);
-		fscanf(beforeTrim, "%ld", &frameSize);
+		fprintf(outFp, "%s,", id);
+		fscanf(beforeTrim, "%d", &frameSize);
 		isSilHead = 1;
 		prePhmIdx = -1;
 		for (i = 0; i < frameSize; i++)
