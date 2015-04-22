@@ -19,6 +19,17 @@
 
 #include "svm_struct_api_types.h"
 #include "svm_struct/svm_struct_common.h"
+#include "utility.h"
+
+
+#include <vector>
+#include <math.h>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <string>
+#include <sstream>
+#include <stdlib.h>
 
 #ifndef svm_struct_api
 #define svm_struct_api
