@@ -388,7 +388,8 @@ void        write_struct_model(char *file, STRUCTMODEL *sm,
   /* Writes structural model sm to file file. */
   FILE *fp = fopen(file, "w");
   fprintf(fp, "%d\n", sm->sizePsi);
-  for (int i = 0; i < sm->sizePsi; i++)
+  int i;
+  for (i = 0; i < sm->sizePsi; i++)
   	fprintf(fp, "%lf ", sm->w[i]);
   fclose(fp);
 }
@@ -404,7 +405,8 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
      FILE *fp = fopen(file, "r");
      fscanf(fp, "%d", &sm.sizePsi);
      sm.w = my_malloc(size(double)*sm.sizePsi);
-     for (int i = 0; i < sm.sizePsi; i++)
+	 int i;
+     for (i = 0; i < sm.sizePsi; i++)
      	fscanf(fp, "%lf", &sm.w[i]);
      fclose(fp);
      return sm;
@@ -414,7 +416,8 @@ void        write_label(FILE *fp, LABEL y)
 {
   /* Writes label y to file handle fp. */
   fprintf(fp, "%s, %d, ", y.id, y.n);
-  for (int i = 0; i < y.n; i++)
+  int i;
+  for (i = 0; i < y.n; i++)
   	fprintf(fp, "%d ", y.phone[i]);
   fprintf(fp, "\n");
 } 
@@ -430,13 +433,14 @@ void outputResult(File *beforeTrim, char *afterTrim)
 	int frameSize;
 	bool isSilHead;
 	int prePhmIdx;
+	int i;
 	while(fscanf(beforeTrim, "%s, ", id) != EOF)
 	{
 		fprint(outFp, "%s,", id);
 		fscanf(beforeTrim, "%d", &frameSize)
 		isSilHead = true;
 		prePhmIdx = -1;
-		for (int i = 0; i < frameSize; i++)
+		for (i = 0; i < frameSize; i++)
 		{
 			fscanf(beforeTrim, "%d", &phonmeIdx)
 			if (isSilHead && phonmeIdx != 36)	//first not-sil phonme
