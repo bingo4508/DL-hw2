@@ -22,6 +22,12 @@
 #include "svm_struct/svm_struct_common.h"
 #include "svm_struct_api.h"
 
+#include <vector>
+#include <string>
+
+using namespace std;
+
+
 #define SM_PSI_SIZE 5616
 #define SM_NUM_FEATURES 69
 #define SM_NUM_PHONMES 48
@@ -46,6 +52,18 @@ void ** new_2d_array(int rows, int cols, int size){
 void * new_1d_array(int len, int size){
     void *a = calloc(len, size);
     return a;
+}
+
+vector<string> split(string str,string sep){
+    char* cstr=const_cast<char*>(str.c_str());
+    char* current;
+    vector<string> arr;
+    current=strtok(cstr,sep.c_str());
+    while(current!=NULL){
+        arr.push_back(current);
+        current=strtok(NULL,sep.c_str());
+    }
+    return arr;
 }
 /******************************************************/
 
@@ -109,7 +127,7 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
           //cout << line<< "\n"; 
 		  vector<string> x =split(line, " ");
 		  int feature_size = x.size()-2;
-		  double *TempVector = (double*) malloc(sizeof(double)*(x.size()-2));   /////////////////////////////my
+		  double *TempVector = (double*) malloc(sizeof(double)*(x.size()-2));   /////////////////////////////my_malloc
 
 		  
 		  CurrentNameT=split(x[0], "_");
@@ -451,7 +469,11 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
            lastLabel=currentLabel;
    }         
   }
+<<<<<<< HEAD
   char* a = "";
+=======
+  char* a="";
+>>>>>>> fb16f67ea016fdd840f9af34916116914734a55a
   SVECTOR *fvec=create_svector(TempWord,a,1.0);
   /* insert code for computing the feature vector for x and y here */
 
@@ -560,7 +582,10 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 	 sm.svm_model = (MODEL*)my_malloc(sizeof(MODEL));
      FILE *fp = fopen(file, "r");
      fscanf(fp, "%ld", &sm.sizePsi);
+<<<<<<< HEAD
 	 fscanf(fp, "%ld", &sm.svm_model->kernel_parm.kernel_type);
+=======
+>>>>>>> fb16f67ea016fdd840f9af34916116914734a55a
      sm.w = (double*)my_malloc(sizeof(double)*sm.sizePsi);
 	 int i;
      for (i = 0; i < sm.sizePsi; i++)

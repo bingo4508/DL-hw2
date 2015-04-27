@@ -19,7 +19,7 @@
 
 #include "svm_struct_api_types.h"
 #include "svm_struct/svm_struct_common.h"
-#include "utility.h"
+//#include "utility.h"
 
 
 #include <vector>

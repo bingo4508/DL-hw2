@@ -1,8 +1,8 @@
 # Makefile for SVM-struct, 03.10.06
 
 #Use the following to compile under unix or cygwin
-CC = gcc
-LD = gcc
+CC = g++
+LD = g++
 
 #Call 'make' using the following line to make CYGWIN produce stand-alone Windows executables
 #		make 'SFLAGS=-mno-cygwin'
