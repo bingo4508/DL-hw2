@@ -30,7 +30,7 @@ void read_input_parameters(int, char **, char *, char *, char *,
 void print_help4(void);
 
 
-int main2 (int argc, char* argv[])
+int main (int argc, char* argv[])
 {
   long correct=0,incorrect=0,no_accuracy=0;
   long i;

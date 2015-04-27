@@ -138,8 +138,6 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
               temp[n].y.id=(char*)malloc(sizeof(char)*30); 
               strcpy(temp[n].y.id,LastName.c_str());
               n++;
-			  if (n >= 10)
-				  break;
               UtteranceN=0;
               TempUtterance[UtteranceN]=TempVector;
               TempLabelS[UtteranceN]=TempLabel;
@@ -454,7 +452,7 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
    }         
   }
   char* a = "";
-  SVECTOR *fvec=create_svector(TempWord,a,0);
+  SVECTOR *fvec=create_svector(TempWord,a,1.0);
   /* insert code for computing the feature vector for x and y here */
 
   return(fvec);
@@ -532,7 +530,20 @@ void        write_struct_model(char *file, STRUCTMODEL *sm,
   /* Writes structural model sm to file file. */
   FILE *fp = fopen(file, "w");
   fprintf(fp, "%ld\n", sm->sizePsi);
+  /*fprintf(fp, "%lf\n", sm->walpha);
+  fprintf(fp, "%d\n", sm->num_features);
+  fprintf(fp, "%d\n", sm->num_phones);
+
+  fprintf(fp, "%ld\n", sm->svm_model->sv_num);
+  fprintf(fp, "%ld\n", sm->svm_model->at_upper_bound);
+  fprintf(fp, "%lf\n", sm->svm_model->b);*/
   int i;
+  /*
+  for (i = 0; i < sm->svm_model->sv_num; i++)
+	fprintf(fp, "%lf ", sm->svm_model->alpha[i]);
+  fprintf(fp, "\n");
+  */
+  fprintf(fp, "%ld\n", sm->svm_model->kernel_parm.kernel_type);
   for (i = 0; i < sm->sizePsi; i++)
   	fprintf(fp, "%lf ", sm->w[i]);
   fclose(fp);
@@ -546,8 +557,10 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 	 sm.sizePsi=SM_PSI_SIZE; /* replace by appropriate number of features */
 	 sm.num_features = SM_NUM_FEATURES;
 	 sm.num_phones = SM_NUM_PHONMES;
+	 sm.svm_model = (MODEL*)my_malloc(sizeof(MODEL));
      FILE *fp = fopen(file, "r");
      fscanf(fp, "%ld", &sm.sizePsi);
+	 fscanf(fp, "%ld", &sm.svm_model->kernel_parm.kernel_type);
      sm.w = (double*)my_malloc(sizeof(double)*sm.sizePsi);
 	 int i;
      for (i = 0; i < sm.sizePsi; i++)
@@ -587,13 +600,13 @@ void outputResult(FILE *beforeTrim, char *afterTrim)
 		for (i = 0; i < frameSize; i++)
 		{
 			fscanf(beforeTrim, "%d", &phonmeIdx);
-			if (isSilHead && phonmeIdx != 36)	//first not-sil phonme
+			if (isSilHead && phonmeIdx != 37)	//first not-sil phonme
 				isSilHead = 0;
 			if (!isSilHead && prePhmIdx != phonmeIdx)
 			{
-				if (phonmeIdx != 36)
+				if (phonmeIdx != 37)
 				{
-					if (prePhmIdx == 36)
+					if (prePhmIdx == 37)
 						fprintf(outFp, "K");
 					if (phonmeIdx < 26)
 						fprintf(outFp, "%c", (char)(phonmeIdx+'a'));

@@ -42,7 +42,7 @@ void   wait_any_key();
 void   print_help();
 
 
-int main (int argc, char* argv[])
+int main2 (int argc, char* argv[])
 {  
   SAMPLE sample;  /* training sample */
   LEARN_PARM learn_parm;
