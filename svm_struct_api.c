@@ -22,6 +22,12 @@
 #include "svm_struct/svm_struct_common.h"
 #include "svm_struct_api.h"
 
+#include <vector>
+#include <string>
+
+using namespace std;
+
+
 #define SM_PSI_SIZE 5616
 #define SM_NUM_FEATURES 69
 #define SM_NUM_PHONMES 48
@@ -46,6 +52,18 @@ void ** new_2d_array(int rows, int cols, int size){
 void * new_1d_array(int len, int size){
     void *a = calloc(len, size);
     return a;
+}
+
+vector<string> split(string str,string sep){
+    char* cstr=const_cast<char*>(str.c_str());
+    char* current;
+    vector<string> arr;
+    current=strtok(cstr,sep.c_str());
+    while(current!=NULL){
+        arr.push_back(current);
+        current=strtok(NULL,sep.c_str());
+    }
+    return arr;
 }
 /******************************************************/
 
@@ -190,8 +208,8 @@ CONSTSET    init_struct_constraints(SAMPLE sample, STRUCTMODEL *sm,
   else { /* add constraints so that all learned weights are
             positive. WARNING: Currently, they are positive only up to
             precision epsilon set by -e. */
-    c.lhs=my_malloc(sizeof(DOC *)*sizePsi);
-    c.rhs=my_malloc(sizeof(double)*sizePsi);
+    c.lhs=(DOC**)my_malloc(sizeof(DOC *)*sizePsi);
+    c.rhs=(double*)my_malloc(sizeof(double)*sizePsi);
     for(i=0; i<sizePsi; i++) {
       words[0].wnum=i+1;
       words[0].weight=1.0;
@@ -544,7 +562,7 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 	 sm.num_phones = SM_NUM_PHONMES;
      FILE *fp = fopen(file, "r");
      fscanf(fp, "%ld", &sm.sizePsi);
-     sm.w = my_malloc(sizeof(double)*sm.sizePsi);
+     sm.w = (double*)my_malloc(sizeof(double)*sm.sizePsi);
 	 int i;
      for (i = 0; i < sm.sizePsi; i++)
      	fscanf(fp, "%lf", &sm.w[i]);
