@@ -86,7 +86,7 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
   
 
   
-  EXAMPLE temp[1000];
+  EXAMPLE temp[5000];
   
   /* fill in your code here */
   fstream fin;
@@ -108,7 +108,7 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
           //cout << line<< "\n"; 
 		  vector<string> x =split(line, " ");
 		  int feature_size = x.size()-2;
-		  double *TempVector = (double*) malloc(sizeof(double)*(x.size()-2));   /////////////////////////////my
+		  double *TempVector = (double*) malloc(sizeof(double)*(x.size()-2));   /////////////////////////////my_malloc
 
 		  
 		  CurrentNameT=split(x[0], "_");
@@ -428,7 +428,7 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
   int currentLabel=-1;
    
   
-  for(int i=1;i<(sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones);i++)
+  for(int i=1;i<(sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)+1;i++)
   {
           TempWord[i-1].wnum=i;
           TempWord[i-1].weight=0;
@@ -449,9 +449,8 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
            lastLabel=currentLabel;
    }         
   }
-  char* a;
-  *a=0;
-  SVECTOR *fvec=create_svector(TempWord,a,0);
+  char* a="";
+  SVECTOR *fvec=create_svector(TempWord,a,1.0);
   /* insert code for computing the feature vector for x and y here */
 
   return(fvec);
