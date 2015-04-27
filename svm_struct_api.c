@@ -151,6 +151,8 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
               for(int i=0;i<UtteranceN;i++){TempLabelS2[i]=TempLabelS[i];}
               temp[n].x.utterance=TempUtterance2;
               temp[n].x.n=UtteranceN;
+              temp[n].x.id=(char*)malloc(sizeof(char)*30); 
+              strcpy(temp[n].x.id,LastName.c_str());
               temp[n].y.phone=TempLabelS2;
               temp[n].y.n=UtteranceN;
               temp[n].y.id=(char*)malloc(sizeof(char)*30); 

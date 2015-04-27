@@ -56,6 +56,7 @@
 typedef struct pattern {
   int n; //num of frames
   double **utterance;
+  char *id;
 } PATTERN;
 
 typedef struct label {
