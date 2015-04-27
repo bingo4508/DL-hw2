@@ -128,8 +128,8 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
               double **TempUtterance2 = (double**) malloc(sizeof(double*)*UtteranceN); /////////////////////////////my
               //int TempLabelS2[UtteranceN];
               int *TempLabelS2 = (int*) malloc(sizeof(int)*UtteranceN);   /////////////////////////////my
-              for(int i=0;i<UtteranceN-1;i++){TempUtterance2[i]=TempUtterance[i];	}
-              for(int i=0;i<UtteranceN-1;i++){TempLabelS2[i]=TempLabelS[i];}
+              for(int i=0;i<UtteranceN;i++){TempUtterance2[i]=TempUtterance[i];	}
+              for(int i=0;i<UtteranceN;i++){TempLabelS2[i]=TempLabelS[i];}
               temp[n].x.utterance=TempUtterance2;
               temp[n].x.n=UtteranceN;
               temp[n].y.phone=TempLabelS2;
