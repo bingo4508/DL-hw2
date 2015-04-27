@@ -86,11 +86,10 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
   
 
   
-  EXAMPLE temp[1000];
+  EXAMPLE temp[5000];
   
   /* fill in your code here */
   fstream fin;
-  int j=0;
   vector<string> CurrentNameT;
   string CurrentName;
   string LastName="Initial";
@@ -104,11 +103,10 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
   getline(input2, line2);
   
   	for(string line; getline(input, line);){
+		
           string line2;
           getline(input2, line2);
           //cout << line<< "\n"; 
-          if(j>1000){break;}
-          j++;
 		  vector<string> x =split(line, " ");
 		  int feature_size = x.size()-2;
 		  double *TempVector = (double*) malloc(sizeof(double)*(x.size()-2));   /////////////////////////////my
@@ -131,8 +129,8 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
               double **TempUtterance2 = (double**) malloc(sizeof(double*)*UtteranceN); /////////////////////////////my
               //int TempLabelS2[UtteranceN];
               int *TempLabelS2 = (int*) malloc(sizeof(int)*UtteranceN);   /////////////////////////////my
-              for(int i=0;i<UtteranceN-1;i++){TempUtterance2[i]=TempUtterance[i];	}
-              for(int i=0;i<UtteranceN-1;i++){TempLabelS2[i]=TempLabelS[i];}
+              for(int i=0;i<UtteranceN;i++){TempUtterance2[i]=TempUtterance[i];	}
+              for(int i=0;i<UtteranceN;i++){TempLabelS2[i]=TempLabelS[i];}
               temp[n].x.utterance=TempUtterance2;
               temp[n].x.n=UtteranceN;
               temp[n].y.phone=TempLabelS2;
@@ -140,6 +138,8 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
               temp[n].y.id=(char*)malloc(sizeof(char)*30); 
               strcpy(temp[n].y.id,LastName.c_str());
               n++;
+			  if (n >= 10)
+				  break;
               UtteranceN=0;
               TempUtterance[UtteranceN]=TempVector;
               TempLabelS[UtteranceN]=TempLabel;
@@ -148,7 +148,7 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
           LastName=CurrentName;
     }
   examples=(EXAMPLE *)malloc(sizeof(EXAMPLE)*n);//my
-  for(int i=0;i<n-1;i++){examples[i]=temp[i]; }
+  for(int i=0;i<n;i++){examples[i]=temp[i]; }
   sample.n=n;		  
   sample.examples=examples;
   return(sample);
@@ -301,7 +301,7 @@ LABEL       find_most_violated_constraint_slackrescaling(PATTERN x, LABEL y,
      shall return an empty label as recognized by the function
      empty_label(y). */
   LABEL ybar;
-  ybar.n = 10;
+  ybar.n = 0;
 
   /* insert your code for computing the label ybar here */
 
@@ -425,14 +425,14 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
      inner vector product) and the appropriate function of the
      loss + margin/slack rescaling method. See that paper for details. */
      
-  SVECTOR *fvec=(SVECTOR*) malloc(sizeof(SVECTOR));
+  //SVECTOR *fvec=(SVECTOR*) malloc(sizeof(SVECTOR));
   
   WORD *TempWord = (WORD*) malloc(sizeof(WORD)*((sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)+1));
   int lastLabel=-1;
   int currentLabel=-1;
    
   
-  for(int i=1;i<(sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones);i++)
+  for(int i=1;i<(sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)+1;i++)
   {
           TempWord[i-1].wnum=i;
           TempWord[i-1].weight=0;
@@ -453,7 +453,8 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
            lastLabel=currentLabel;
    }         
   }
-  (*fvec).words=TempWord;
+  char* a = "";
+  SVECTOR *fvec=create_svector(TempWord,a,0);
   /* insert code for computing the feature vector for x and y here */
 
   return(fvec);
