@@ -490,7 +490,7 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
      loss + margin/slack rescaling method. See that paper for details. */
      
   //SVECTOR *fvec=(SVECTOR*) malloc(sizeof(SVECTOR));
-  
+  //cout << "hey. \n"; 
   WORD *TempWord = (WORD*) malloc(sizeof(WORD)*((sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)+1));
   int lastLabel=-1;
   int currentLabel=-1;
@@ -503,22 +503,25 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
   }
   TempWord[(sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)].wnum=0;
   
-  for(int i=0;i<x.n-1;i++)
+  for(int i=0;i<x.n;i++)
   {
-   for(int j=0;j<(sm->num_features-1);j++)
+   for(int j=0;j<(sm->num_features);j++)
    {
            //cout <<x.utterance[i][0]<<endl; 
-           currentLabel=y.phone[i];
+
            TempWord[j+(sm->num_features)*y.phone[i]].weight+=x.utterance[i][j];
-           if(lastLabel>1)
+
+           
+   }  
+           currentLabel=y.phone[i];
+           if(lastLabel>=0)
            {
-           TempWord[(sm->num_features)*(sm->num_phones)+(sm->num_phones)*lastLabel+currentLabel].weight++;
+           TempWord[(sm->num_features)*(sm->num_phones)+(sm->num_phones)*lastLabel+currentLabel].weight++; 
            }
-           lastLabel=currentLabel;
-   }         
+           lastLabel=currentLabel;     
   }
-  char* a = "";
-  SVECTOR *fvec=create_svector(TempWord,a,1.0);
+  char* a="";
+  SVECTOR *fvec=create_svector(TempWord,a,1.0); 
   /* insert code for computing the feature vector for x and y here */
 
   return(fvec);
