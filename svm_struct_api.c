@@ -240,6 +240,8 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
     LABEL y;
     y.phone = (int *)new_1d_array(x.n, sizeof(int));
     y.n = x.n;
+    y.id = (char *)new_1d_array(30, sizeof(char));
+    strcpy(y.id, x.id);
 
     int num_state = sm->num_phones;
     int num_obsrv = x.n;
@@ -384,7 +386,8 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
                 }
                 delta[t][j] = p + dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
             }
-	    if(ybar.phone[t]==j)delta[t][j]++;
+	    if(ybar.phone[t] != j)
+		delta[t][j]++;
         }
 
     // Back-tracking
@@ -471,11 +474,7 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
            lastLabel=currentLabel;
    }         
   }
-<<<<<<< HEAD
   char* a = "";
-=======
-  char* a="";
->>>>>>> fb16f67ea016fdd840f9af34916116914734a55a
   SVECTOR *fvec=create_svector(TempWord,a,1.0);
   /* insert code for computing the feature vector for x and y here */
 
@@ -584,10 +583,7 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 	 sm.svm_model = (MODEL*)my_malloc(sizeof(MODEL));
      FILE *fp = fopen(file, "r");
      fscanf(fp, "%ld", &sm.sizePsi);
-<<<<<<< HEAD
-	 fscanf(fp, "%ld", &sm.svm_model->kernel_parm.kernel_type);
-=======
->>>>>>> fb16f67ea016fdd840f9af34916116914734a55a
+     fscanf(fp, "%ld", &sm.svm_model->kernel_parm.kernel_type);
      sm.w = (double*)my_malloc(sizeof(double)*sm.sizePsi);
 	 int i;
      for (i = 0; i < sm.sizePsi; i++)
