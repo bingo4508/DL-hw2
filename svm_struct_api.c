@@ -354,7 +354,6 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
      shall return an empty label as recognized by the function
      empty_label(y). */
     LABEL ybar;
-
   /* insert your code for computing the label ybar here */
     ybar.phone = (int *)new_1d_array(x.n, sizeof(int));
     ybar.n = x.n;
@@ -365,30 +364,74 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
     int tran_start = num_feature*num_state;
     int t,j,i;
 
+    
     double **delta = (double **)new_2d_array(num_obsrv, num_state, sizeof(double));
     int **track = (int **)new_2d_array(num_obsrv, num_state, sizeof(int));
-
-    /* Viterbi */
-    // Forwarding
-    for (t=0; t<num_obsrv; ++t)
-        for (j=0; j<num_state; ++j){
-            if (t == 0){
-                //log(P{a|x1}) = dot(wa,x1)
-                delta[t][j] = dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
-            }else{
-                double p = -1e9;
-                for (i=0; i<num_state; ++i){
-                    double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j];
-                    if (w > p){
-                        p = w;
-                        track[t][j] = i;
+    if(sparm->loss_function==0)
+    {
+    	/* Viterbi */
+    	// Forwarding
+    	for (t=0; t<num_obsrv; ++t)
+      	    for (j=0; j<num_state; ++j){
+                if (t == 0){
+                    //log(P{a|x1}) = dot(wa,x1)
+                    delta[t][j] = dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
+                }else{
+                    double p = -1e9;
+                    for (i=0; i<num_state; ++i){
+                        double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j];
+                        if(t < num_obsrv-1)
+                        {
+			    if (w > p){
+                        	    p = w;
+                        	    track[t][j] = i;
+                    	    }
+		        }
+ 		        else
+		        {
+			    if(w+1 > p){
+			        if(track[t-1][j]==y.phone[t-1] && y.phone[t]==i &&  w > p){
+				    p = w;
+				    track[t][j] = i;
+				}
+                            }
+                            else{
+				p = w+1;
+				track[t][j] = i;
+			    }
+			    
+                        }			       
                     }
-                }
-                delta[t][j] = p + dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
+                    delta[t][j] = p + dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
+                }    
             }
-	    if(ybar.phone[t] != j)
-		delta[t][j]++;
-        }
+    }
+    else
+    {
+        /* Viterbi */
+        // Forwarding
+        for (t=0; t<num_obsrv; ++t)
+            for (j=0; j<num_state; ++j){
+                if (t == 0){
+                    //log(P{a|x1}) = dot(wa,x1)
+                    delta[t][j] = dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
+                }else{
+                    double p = -1e9;
+                    for (i=0; i<num_state; ++i){
+                        double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j];
+                            if (w > p){
+                                    p = w;
+                                    track[t][j] = i;
+                            }
+
+                        }
+                    delta[t][j] = p + dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
+                }
+	    }
+                if(y.phone[t] != j)
+                    delta[t][j]++;
+    }
+
 
     // Back-tracking
     double p = -1e9;
@@ -396,7 +439,7 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
         if (delta[num_obsrv-1][j] > p){
             p = delta[num_obsrv-1][j];
             ybar.phone[num_obsrv-1] = j;
-	}
+    }    
 
     for (t=num_obsrv-1; t>0; --t)
         ybar.phone[t-1] = track[t][ybar.phone[t]];
