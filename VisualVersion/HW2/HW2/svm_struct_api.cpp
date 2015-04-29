@@ -22,6 +22,12 @@
 #include "svm_struct/svm_struct_common.h"
 #include "svm_struct_api.h"
 
+#include <vector>
+#include <string>
+
+using namespace std;
+
+
 #define SM_PSI_SIZE 5616
 #define SM_NUM_FEATURES 69
 #define SM_NUM_PHONMES 48
@@ -47,6 +53,20 @@ void * new_1d_array(int len, int size){
     void *a = calloc(len, size);
     return a;
 }
+
+vector<string> split(string str,string sep){
+    char* cstr=const_cast<char*>(str.c_str());
+    char* current;
+    vector<string> arr;
+    current=strtok(cstr,sep.c_str());
+    while(current!=NULL){
+        arr.push_back(current);
+        current=strtok(NULL,sep.c_str());
+    }
+    return arr;
+}
+
+double      loss(LABEL y, LABEL ybar, STRUCT_LEARN_PARM *sparm);
 /******************************************************/
 
 
@@ -109,7 +129,7 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
           //cout << line<< "\n"; 
 		  vector<string> x =split(line, " ");
 		  int feature_size = x.size()-2;
-		  double *TempVector = (double*) malloc(sizeof(double)*(x.size()-2));   /////////////////////////////my
+		  double *TempVector = (double*) malloc(sizeof(double)*(x.size()-2));   /////////////////////////////my_malloc
 
 		  
 		  CurrentNameT=split(x[0], "_");
@@ -133,11 +153,15 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
               for(int i=0;i<UtteranceN;i++){TempLabelS2[i]=TempLabelS[i];}
               temp[n].x.utterance=TempUtterance2;
               temp[n].x.n=UtteranceN;
+              temp[n].x.id=(char*)malloc(sizeof(char)*30); 
+              strcpy(temp[n].x.id,LastName.c_str());
               temp[n].y.phone=TempLabelS2;
               temp[n].y.n=UtteranceN;
               temp[n].y.id=(char*)malloc(sizeof(char)*30); 
               strcpy(temp[n].y.id,LastName.c_str());
               n++;
+			  if (n >= 10)
+				  break;
               UtteranceN=0;
               TempUtterance[UtteranceN]=TempVector;
               TempLabelS[UtteranceN]=TempLabel;
@@ -220,6 +244,8 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
     LABEL y;
     y.phone = (int *)new_1d_array(x.n, sizeof(int));
     y.n = x.n;
+    y.id = (char *)new_1d_array(30, sizeof(char));
+    strcpy(y.id, x.id);
 
     int num_state = sm->num_phones;
     int num_obsrv = x.n;
@@ -364,7 +390,8 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
                 }
                 delta[t][j] = p + dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
             }
-	    if(ybar.phone[t]==j)delta[t][j]++;
+	    if(y.phone[t] != j)
+		delta[t][j]++;
         }
 
     // Back-tracking
@@ -437,19 +464,21 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
   }
   TempWord[(sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)].wnum=0;
   
-  for(int i=0;i<x.n-1;i++)
+  for(int i=0;i<x.n;i++)
   {
-   for(int j=0;j<(sm->num_features-1);j++)
+   currentLabel = y.phone[i];
+   for(int j=0;j<(sm->num_features);j++)
    {
            //cout <<x.utterance[i][0]<<endl; 
-           currentLabel=y.phone[i];
+           
            TempWord[j+(sm->num_features)*y.phone[i]].weight+=x.utterance[i][j];
-           if(lastLabel>1)
-           {
-           TempWord[(sm->num_features)*(sm->num_phones)+(sm->num_phones)*lastLabel+currentLabel].weight++;
-           }
-           lastLabel=currentLabel;
-   }         
+          
+   }
+   if (lastLabel >= 0)
+   {
+	   TempWord[(sm->num_features)*(sm->num_phones) + (sm->num_phones)*lastLabel + currentLabel].weight++;
+   }
+   lastLabel = currentLabel;
   }
   char* a = "";
   SVECTOR *fvec=create_svector(TempWord,a,1.0);
@@ -545,7 +574,7 @@ void        write_struct_model(char *file, STRUCTMODEL *sm,
   */
   fprintf(fp, "%ld\n", sm->svm_model->kernel_parm.kernel_type);
   for (i = 0; i < sm->sizePsi; i++)
-  	fprintf(fp, "%lf ", sm->w[i]);
+  	fprintf(fp, "%e ", sm->w[i]);
   fclose(fp);
 }
 
@@ -560,7 +589,7 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 	 sm.svm_model = (MODEL*)my_malloc(sizeof(MODEL));
      FILE *fp = fopen(file, "r");
      fscanf(fp, "%ld", &sm.sizePsi);
-	 fscanf(fp, "%ld", &sm.svm_model->kernel_parm.kernel_type);
+     fscanf(fp, "%ld", &sm.svm_model->kernel_parm.kernel_type);
      sm.w = (double*)my_malloc(sizeof(double)*sm.sizePsi);
 	 int i;
      for (i = 0; i < sm.sizePsi; i++)
@@ -572,7 +601,7 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 void        write_label(FILE *fp, LABEL y)
 {
   /* Writes label y to file handle fp. */
-  fprintf(fp, "%s, %d, ", y.id, y.n);
+  fprintf(fp, "%s %d ", y.id, y.n);
   int i;
   for (i = 0; i < y.n; i++)
   	fprintf(fp, "%d ", y.phone[i]);
@@ -591,10 +620,10 @@ void outputResult(FILE *beforeTrim, char *afterTrim)
 	int isSilHead;
 	int prePhmIdx;
 	int i;
-	while(fscanf(beforeTrim, "%s, ", id) != EOF)
+	while(fscanf(beforeTrim, "%s ", id) != EOF)
 	{
-		fprintf(outFp, "%s,", id);
-		fscanf(beforeTrim, "%d", &frameSize);
+		fprintf(outFp, "%s ", id);
+		fscanf(beforeTrim, "%d ", &frameSize);
 		isSilHead = 1;
 		prePhmIdx = -1;
 		for (i = 0; i < frameSize; i++)

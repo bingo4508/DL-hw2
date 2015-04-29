@@ -568,7 +568,7 @@ void        write_struct_model(char *file, STRUCTMODEL *sm,
   */
   fprintf(fp, "%ld\n", sm->svm_model->kernel_parm.kernel_type);
   for (i = 0; i < sm->sizePsi; i++)
-  	fprintf(fp, "%lf ", sm->w[i]);
+  	fprintf(fp, "%e ", sm->w[i]);
   fclose(fp);
 }
 
@@ -595,7 +595,7 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 void        write_label(FILE *fp, LABEL y)
 {
   /* Writes label y to file handle fp. */
-  fprintf(fp, "%s, %d, ", y.id, y.n);
+  fprintf(fp, "%s %d ", y.id, y.n);
   int i;
   for (i = 0; i < y.n; i++)
   	fprintf(fp, "%d ", y.phone[i]);
@@ -614,9 +614,9 @@ void outputResult(FILE *beforeTrim, char *afterTrim)
 	int isSilHead;
 	int prePhmIdx;
 	int i;
-	while(fscanf(beforeTrim, "%s, ", id) != EOF)
+	while(fscanf(beforeTrim, "%s ", id) != EOF)
 	{
-		fprintf(outFp, "%s,", id);
+		fprintf(outFp, "%s ", id);
 		fscanf(beforeTrim, "%d", &frameSize);
 		isSilHead = 1;
 		prePhmIdx = -1;

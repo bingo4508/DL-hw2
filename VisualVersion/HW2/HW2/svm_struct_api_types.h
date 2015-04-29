@@ -56,6 +56,7 @@
 typedef struct pattern {
   int n; //num of frames
   double **utterance;
+  char *id;
 } PATTERN;
 
 typedef struct label {
@@ -110,7 +111,6 @@ typedef struct struct_test_stats {
   /* you can add variables for keeping statistics when evaluating the
      test predictions in svm_struct_classify. This can be used in the
      function eval_prediction and print_struct_testing_stats. */
-	int x;
 } STRUCT_TEST_STATS;
 
 #endif

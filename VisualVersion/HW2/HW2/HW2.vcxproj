@@ -23,7 +23,6 @@
     <ClCompile Include="svm_struct\svm_struct_main.cpp" />
     <ClCompile Include="svm_struct_api.cpp" />
     <ClCompile Include="svm_struct_learn_custom.cpp" />
-    <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="svm_light\kernel.h" />
@@ -34,7 +33,6 @@
     <ClInclude Include="svm_struct\svm_struct_learn.h" />
     <ClInclude Include="svm_struct_api.h" />
     <ClInclude Include="svm_struct_api_types.h" />
-    <ClInclude Include="utility.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{506279FB-475B-4AED-A941-139747F8BC0B}</ProjectGuid>

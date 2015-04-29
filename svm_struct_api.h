@@ -85,5 +85,5 @@ void        svm_learn_struct_joint_custom(SAMPLE sample,
 				   STRUCT_LEARN_PARM *sparm,
 				   LEARN_PARM *lparm, KERNEL_PARM *kparm, 
 				   STRUCTMODEL *sm);
-
+void outputResult(FILE *beforeTrim, char *afterTrim);
 #endif
