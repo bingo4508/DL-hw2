@@ -30,6 +30,7 @@ extern "C" {
 char testfile[200];
 char modelfile[200];
 char predictionsfile[200];
+char answerFile[200];
 
 void read_input_parameters(int, char **, char *, char *, char *, 
 			   STRUCT_LEARN_PARM *, long*, long *);
@@ -51,7 +52,7 @@ int main (int argc, char* argv[])
 
   svm_struct_classify_api_init(argc,argv);
 
-  read_input_parameters(argc,argv,testfile,modelfile,predictionsfile,&sparm,
+  read_input_parameters(argc,argv,testfile,modelfile,predictionsfile,answerFile,&sparm,
 			&verbosity,&struct_verbosity);
 
   if(struct_verbosity>=1) {
@@ -108,7 +109,11 @@ int main (int argc, char* argv[])
   }  
   avgloss/=testsample.n;
   fclose(predfl);
-
+  
+  FILE* predf2 = fopen(predictionsfile2, "r");
+  outputResult(predf2, answerFile);
+  fclose(predf2);
+  
   if(struct_verbosity>=1) {
     printf("done\n");
     printf("Runtime (without IO) in cpu-seconds: %.2f\n",
@@ -128,7 +133,7 @@ int main (int argc, char* argv[])
 }
 
 void read_input_parameters(int argc,char *argv[],char *testfile,
-			   char *modelfile,char *predictionsfile,
+			   char *modelfile,char *predictionsfile, char *answerFile,
 			   STRUCT_LEARN_PARM *struct_parm,
 			   long *verbosity,long *struct_verbosity)
 {
@@ -164,6 +169,8 @@ void read_input_parameters(int argc,char *argv[],char *testfile,
   if((i+2)<argc) {
     strcpy (predictionsfile, argv[i+2]);
   }
+  if ((i+3)<argc)
+	strcpy (answerFile, argv[i+3]);
 
   parse_struct_parameters_classify(struct_parm);
 }
