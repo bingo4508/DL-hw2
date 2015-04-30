@@ -676,7 +676,7 @@ void outputResult(FILE *beforeTrim, char *afterTrim)
 				if (phonmeIdx != 37)
 				{
 					if (prePhmIdx == 37)
-						fprintf(outFp, "K");
+						fprintf(outFp, "L");
 					if (phonmeIdx < 26)
 						fprintf(outFp, "%c", (char)(phonmeIdx+'a'));
 					else
