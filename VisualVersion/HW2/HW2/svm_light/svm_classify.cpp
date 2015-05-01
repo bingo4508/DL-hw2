@@ -20,7 +20,7 @@
 
 char docfile2[200];
 char modelfile2[200];
-char predictionsfile[200];
+char predictionsfile2[200];
 
 void read_input_parameters(int, char **, char *, char *, char *, long *, 
 			   long *);
@@ -42,7 +42,7 @@ int main3 (int argc, char* argv[])
   FILE *predfl,*docfl;
   MODEL *model; 
 
-  read_input_parameters(argc,argv,docfile2,modelfile2,predictionsfile,
+  read_input_parameters(argc,argv,docfile2,modelfile2,predictionsfile2,
 			&verbosity,&pred_format);
 
   nol_ll(docfile2,&max_docs,&max_words_doc,&lld); /* scan size of input file */
@@ -65,8 +65,8 @@ int main3 (int argc, char* argv[])
 
   if ((docfl = fopen (docfile2, "r")) == NULL)
   { perror (docfile2); exit (1); }
-  if ((predfl = fopen (predictionsfile, "w")) == NULL)
-  { perror (predictionsfile); exit (1); }
+  if ((predfl = fopen (predictionsfile2, "w")) == NULL)
+  { perror (predictionsfile2); exit (1); }
 
   while((!feof(docfl)) && fgets(line,(int)lld,docfl)) {
     if(line[0] == '#') continue;  /* line contains comments */
@@ -143,14 +143,14 @@ int main3 (int argc, char* argv[])
 }
 
 void read_input_parameters(int argc, char **argv, char *docfile2, 
-			   char *modelfile2, char *predictionsfile, 
+			   char *modelfile2, char *predictionsfile2, 
 			   long int *verbosity, long int *pred_format)
 {
   long i;
   
   /* set default */
   strcpy (modelfile2, "svm_model");
-  strcpy (predictionsfile, "svm_predictions"); 
+  strcpy (predictionsfile2, "svm_predictions"); 
   (*verbosity)=2;
   (*pred_format)=1;
 
@@ -173,7 +173,7 @@ void read_input_parameters(int argc, char **argv, char *docfile2,
   strcpy (docfile2, argv[i]);
   strcpy (modelfile2, argv[i+1]);
   if((i+2)<argc) {
-    strcpy (predictionsfile, argv[i+2]);
+    strcpy (predictionsfile2, argv[i+2]);
   }
   if(((*pred_format) != 0) && ((*pred_format) != 1)) {
     printf("\nOutput format can only take the values 0 or 1!\n\n");

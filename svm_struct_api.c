@@ -258,17 +258,17 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
         for (j=0; j<num_state; ++j){
             if (t == 0){
                 //log(P{a|x1}) = dot(wa,x1)
-                delta[t][j] = dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
+                delta[t][j] = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
             }else{
                 double p = -1e9;
                 for (i=0; i<num_state; ++i){
-                    double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j];
+                    double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j+1];
                     if (w > p){
                         p = w;
                         track[t][j] = i;
                     }
                 }
-                delta[t][j] = p + dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
+                delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
             }
         }
 
@@ -375,11 +375,11 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
       	    for (j=0; j<num_state; ++j){
                 if (t == 0){
                     //log(P{a|x1}) = dot(wa,x1)
-                    delta[t][j] = dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
+                    delta[t][j] = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
                 }else{
                     double p = -1e9;
                     for (i=0; i<num_state; ++i){
-                        double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j];
+                        double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j+1];
                         if(t < num_obsrv-1)
                         {
 			    if (w > p){
@@ -402,7 +402,7 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
 			    
                         }			       
                     }
-                    delta[t][j] = p + dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
+                    delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
                 }    
             }
     }
@@ -414,18 +414,18 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
             for (j=0; j<num_state; ++j){
                 if (t == 0){
                     //log(P{a|x1}) = dot(wa,x1)
-                    delta[t][j] = dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
+                    delta[t][j] = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
                 }else{
                     double p = -1e9;
                     for (i=0; i<num_state; ++i){
-                        double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j];
+                        double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j+1];
                             if (w > p){
                                     p = w;
                                     track[t][j] = i;
                             }
 
                         }
-                    delta[t][j] = p + dot(&sm->w[j*num_feature], x.utterance[t], num_feature);
+                    delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
                 }
 	    }
                 if(y.phone[t] != j)
@@ -614,7 +614,7 @@ void        write_struct_model(char *file, STRUCTMODEL *sm,
   */
   fprintf(fp, "%ld\n", sm->svm_model->kernel_parm.kernel_type);
   for (i = 0; i < sm->sizePsi; i++)
-  	fprintf(fp, "%e ", sm->w[i]);
+  	fprintf(fp, "%e ", sm->w[i+1]);
   fclose(fp);
 }
 
@@ -630,10 +630,10 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
      FILE *fp = fopen(file, "r");
      fscanf(fp, "%ld", &sm.sizePsi);
      fscanf(fp, "%ld", &sm.svm_model->kernel_parm.kernel_type);
-     sm.w = (double*)my_malloc(sizeof(double)*sm.sizePsi);
+     sm.w = (double*)my_malloc(sizeof(double)*(sm.sizePsi+1));
 	 int i;
      for (i = 0; i < sm.sizePsi; i++)
-     	fscanf(fp, "%lf", &sm.w[i]);
+     	fscanf(fp, "%lf", &sm.w[i+1]);
      fclose(fp);
      return sm;
 }

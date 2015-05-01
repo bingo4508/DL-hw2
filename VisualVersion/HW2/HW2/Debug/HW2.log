@@ -1,11 +1,11 @@
-﻿已經開始建置於 2015/4/29 下午 11:20:05。
+﻿已經開始建置於 2015/5/1 下午 07:33:15。
      1>節點 2 (Build 目標) 上的專案 "D:\OneDrive\SourceTree\DeepLearning2015\HW2\VisualVersion\HW2\HW2\HW2.vcxproj"。
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D _CRT_SECURE_NO_WARNINGS /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt svm_struct_api.cpp
          svm_struct_api.cpp
-     1>d:\onedrive\sourcetree\deeplearning2015\hw2\visualversion\hw2\hw2\svm_struct_api.cpp(137): warning C4018: '<' : signed/unsigned 不相符
-     1>d:\onedrive\sourcetree\deeplearning2015\hw2\visualversion\hw2\hw2\svm_struct_api.cpp(474): warning C4244: '+=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
-     1>d:\onedrive\sourcetree\deeplearning2015\hw2\visualversion\hw2\hw2\svm_struct_api.cpp(727): warning C4065: switch 陳述式包含 'default'，但沒有 'case' 標籤
+     1>d:\onedrive\sourcetree\deeplearning2015\hw2\visualversion\hw2\hw2\svm_struct_api.cpp(135): warning C4018: '<' : signed/unsigned 不相符
+     1>d:\onedrive\sourcetree\deeplearning2015\hw2\visualversion\hw2\hw2\svm_struct_api.cpp(533): warning C4244: '+=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>d:\onedrive\sourcetree\deeplearning2015\hw2\visualversion\hw2\hw2\svm_struct_api.cpp(788): warning C4065: switch 陳述式包含 'default'，但沒有 'case' 標籤
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\OneDrive\SourceTree\DeepLearning2015\HW2\VisualVersion\HW2\Debug\HW2.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\OneDrive\SourceTree\DeepLearning2015\HW2\VisualVersion\HW2\Debug\HW2.pdb" /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\OneDrive\SourceTree\DeepLearning2015\HW2\VisualVersion\HW2\Debug\HW2.lib" /MACHINE:X86 Debug\pr_loqo.obj
          Debug\svm_classify.obj
@@ -24,4 +24,4 @@
 
 建置成功。
 
-經過時間 00:00:00.80
+經過時間 00:00:00.69
