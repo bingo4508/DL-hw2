@@ -32,7 +32,7 @@ char modelfile[200];
 char predictionsfile[200];
 char answerFile[200];
 
-void read_input_parameters(int, char **, char *, char *, char *, 
+void read_input_parameters(int, char **, char *, char *, char *, char *, 
 			   STRUCT_LEARN_PARM *, long*, long *);
 void print_help(void);
 
@@ -110,7 +110,7 @@ int main (int argc, char* argv[])
   avgloss/=testsample.n;
   fclose(predfl);
   
-  FILE* predf2 = fopen(predictionsfile2, "r");
+  FILE* predf2 = fopen(predictionsfile, "r");
   outputResult(predf2, answerFile);
   fclose(predf2);
   
