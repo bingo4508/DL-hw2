@@ -21,6 +21,7 @@
 #include <string.h>
 #include "svm_struct/svm_struct_common.h"
 #include "svm_struct_api.h"
+#include <omp.h>
 
 #include <vector>
 #include <string>
@@ -271,6 +272,9 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
                     }
                 }
                 delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
+#ifdef DEBUG
+	printf("t:%d\tj:%d\tp:%f\tdot:%f\n",t,j,p,dot(&sm->w[j*num_feature], x.utterance[t], num_feature));
+#endif
             }
         }
 
@@ -322,6 +326,9 @@ LABEL       find_most_violated_constraint_slackrescaling(PATTERN x, LABEL y,
      Psi(x,ybar)>Psi(x,y)-1. If the function cannot find a label, it
      shall return an empty label as recognized by the function
      empty_label(y). */
+#ifdef DEBUG
+  printf("find-most_violated_constraint_slackrescaling\n");
+#endif
   LABEL ybar;
   ybar.n = 0;
 
@@ -355,6 +362,10 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
      Psi(x,ybar)>Psi(x,y)-1. If the function cannot find a label, it
      shall return an empty label as recognized by the function
      empty_label(y). */
+#ifdef DEBUG
+  printf("find-most_violated_constraint_marginrescaling\n");
+#endif
+ 
     LABEL ybar;
   /* insert your code for computing the label ybar here */
     ybar.phone = (int *)new_1d_array(x.n, sizeof(int));
@@ -364,84 +375,80 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
     int num_obsrv = x.n;
     int num_feature = sm->num_features;
     int tran_start = num_feature*num_state;
-    int t,j,i;
+    int t;
 
     
     double **delta = (double **)new_2d_array(num_obsrv, num_state, sizeof(double));
     int **track = (int **)new_2d_array(num_obsrv, num_state, sizeof(int));
+
     if(sparm->loss_function==0)
     {
     	/* Viterbi */
     	// Forwarding
     	for (t=0; t<num_obsrv; ++t)
-		for (j = 0; j < num_state; ++j){
-			if (t == 0){
-				//log(P{a|x1}) = dot(wa,x1)
-				delta[t][j] = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
-			}
-			else{
-				double p = -1e9;
-				for (i = 0; i < num_state; ++i){
-					double w = delta[t - 1][i] + sm->w[tran_start + num_state*i + j+1];
-					if (t < num_obsrv - 1)
-					{
-						if (w > p){
-							p = w;
-							track[t][j] = i;
-						}
-					}
-					else
-					{
-						if (w + 1 > p){
-							if (track[t - 1][j] == y.phone[t - 1] && y.phone[t] == i &&  w > p){
-								p = w;
-								track[t][j] = i;
-							}
-						}
-						else{
-							p = w + 1;
-							track[t][j] = i;
-						}
-
-					}
+      	    for (int j=0; j<num_state; ++j){
+                if (t == 0){
+                    //log(P{a|x1}) = dot(wa,x1)
+                    delta[t][j] = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
+                }else{
+                    double p = -1e9;
+                    for (int i=0; i<num_state; ++i){
+                        double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j+1];
+                        if(t < num_obsrv-1)
+                        {
+			    if (w > p){
+                        	    p = w;
+                        	    track[t][j] = i;
+                    	    }
+		        }
+ 		        else
+		        {
+			    if(w+1 > p){
+			        if(track[t-1][j]==y.phone[t-1] && y.phone[t]==i &&  w > p){
+				    p = w;
+				    track[t][j] = i;
 				}
-				delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
-			}
-		}
+                            }
+                            else{
+				p = w+1;
+				track[t][j] = i;
+			    }
+			    
+                        }			       
+                    }
+                    delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
+                }    
+            }
     }
     else
     {
         /* Viterbi */
         // Forwarding
-		for (t = 0; t < num_obsrv; ++t)
-		{
-			for (j = 0; j < num_state; ++j){
-				if (t == 0){
-					//log(P{a|x1}) = dot(wa,x1)
-					delta[t][j] = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
-				}
-				else{
-					double p = -1e9;
-					for (i = 0; i<num_state; ++i){
-						double w = delta[t - 1][i] + sm->w[tran_start + num_state*i + j+1];
-						if (w > p){
-							p = w;
-							track[t][j] = i;
-						}
+        for (t=0; t<num_obsrv; ++t)
+            for (int j=0; j<num_state; ++j){
+                if (t == 0){
+                    //log(P{a|x1}) = dot(wa,x1)
+                    delta[t][j] = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
+                }else{
+                    double p = -1e9;
+                    for (int i=0; i<num_state; ++i){
+                        double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j+1];
+                            if (w > p){
+                                    p = w;
+                                    track[t][j] = i;
+                            }
 
-					}
-					delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
-				}
-				if (y.phone[t] != j)
-					delta[t][j]++;
-			}
-		}
+                        }
+                    delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
+                }
+                if(y.phone[t] != j)
+                    delta[t][j]++;
+	    }
     }
-
 
     // Back-tracking
     double p = -1e9;
-    for (j=0; j<num_state; ++j)
+    for (int j=0; j<num_state; ++j)
         if (delta[num_obsrv-1][j] > p){
             p = delta[num_obsrv-1][j];
             ybar.phone[num_obsrv-1] = j;
@@ -466,7 +473,7 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
 	}
 
     // Free memory
-    for(i=0;i<num_obsrv;++i){
+    for(int i=0;i<num_obsrv;++i){
         free(delta[i]);
         free(track[i]);
     }
@@ -482,6 +489,10 @@ int         empty_label(LABEL y)
      returned by find_most_violated_constraint_???(x, y, sm) if there
      is no incorrect label that can be found for x, or if it is unable
      to label x at all */
+#ifdef DEBUG
+  printf("empty_label\n");
+#endif
+ 
   return(0);
 }
 
@@ -517,7 +528,7 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
   int currentLabel=-1;
    
   
-  for(int i=1;i<(sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)+2;i++)
+  for(int i=1;i<(sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)+1;i++)
   {
           TempWord[i-1].wnum=i;
           TempWord[i-1].weight=0;
@@ -543,6 +554,7 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
   }
   char* a="";
   SVECTOR *fvec=create_svector(TempWord,a,1.0); 
+  free(TempWord);
   /* insert code for computing the feature vector for x and y here */
 
   return(fvec);
@@ -578,6 +590,10 @@ int         finalize_iteration(double ceps, int cached_constraint,
 			       STRUCT_LEARN_PARM *sparm)
 {
   /* This function is called just before the end of each cutting plane iteration. ceps is the amount by which the most violated constraint found in the current iteration was violated. cached_constraint is true if the added constraint was constructed from the cache. If the return value is FALSE, then the algorithm is allowed to terminate. If it is TRUE, the algorithm will keep iterating even if the desired precision sparm->epsilon is already reached. */
+#ifdef DEBUG
+  printf("finalize_iteration\n");
+#endif
+ 
   return(0);
 }
 
@@ -672,7 +688,7 @@ void        write_label(FILE *fp, LABEL y)
 void outputResult(FILE *beforeTrim, char *afterTrim)
 {
 	FILE *outFp = fopen(afterTrim, "w");
-	fprintf(outFp, "id,phonme_sequence\n");
+	fprintf(outFp, "id,phone_sequence\n");
 	rewind(beforeTrim);
 	
 	char id[40];
@@ -683,7 +699,7 @@ void outputResult(FILE *beforeTrim, char *afterTrim)
 	int i;
 	while(fscanf(beforeTrim, "%s ", id) != EOF)
 	{
-		fprintf(outFp, "%s ", id);
+		fprintf(outFp, "%s,", id);
 		fscanf(beforeTrim, "%d", &frameSize);
 		isSilHead = 1;
 		prePhmIdx = -1;
@@ -713,10 +729,17 @@ void outputResult(FILE *beforeTrim, char *afterTrim)
 
 void        free_pattern(PATTERN x) {
   /* Frees the memory of x. */
+    int i;
+    for(i=0;i<x.n;++i)
+        free(x.utterance[i]);
+    free(x.id);
+    free(x.utterance);
 }
 
 void        free_label(LABEL y) {
   /* Frees the memory of y. */
+    //free(y.id);
+    free(y.phone);
 }
 
 void        free_struct_model(STRUCTMODEL sm) 

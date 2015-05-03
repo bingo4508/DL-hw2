@@ -21,6 +21,7 @@
 #include "svm_struct_learn.h"
 #include "svm_struct_common.h"
 #include "../svm_struct_api.h"
+#include <omp.h>
 #include <assert.h>
 
 #define MAX(x,y)      ((x) < (y) ? (y) : (x))
@@ -607,7 +608,8 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
   /*****************/
   do { /* iteratively find and add constraints to working set */
 
-      if(struct_verbosity>=1) { 
+      if(struct_verbosity>=1) {
+        //if(numIt == 100) break; 
 	printf("Iter %i: ",++numIt); 
 	fflush(stdout);
       }
@@ -701,27 +703,35 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	progress=0;
 	rt_total+=MAX(get_runtime()-rt1,0);
 
-	for(i=0; i<n; i++) {
-	  rt1=get_runtime();
+//omp_set_num_threads(2);
+#pragma omp parallel for private (fydelta, rhs_i, rt1) reduction (+ : rt_viol, rt_psi, argmax_count, rhs, rt_total)
+	for(int i=0; i<n; i++) {
+		  rt1=get_runtime();
 
-	  if(struct_verbosity>=1) 
-	    print_percent_progress(&progress,n,10,".");
+#pragma omp critical
+		  if(struct_verbosity>=1){
+		    print_percent_progress(&progress,n,10,".");
+		  }
 
-	  /* compute most violating fydelta=fy-fybar and rhs for example i */
-	  find_most_violated_constraint(&fydelta,&rhs_i,&ex[i],fycache[i],n,
-				      sm,sparm,&rt_viol,&rt_psi,&argmax_count);
-	  /* add current fy-fybar to lhs of constraint */
-	  if(kparm->kernel_type == LINEAR) {
-	    add_list_n_ns(lhs_n,fydelta,1.0); /* add fy-fybar to sum */
-	    free_svector(fydelta);
-	  }
-	  else {
-	    append_svector_list(fydelta,lhs); /* add fy-fybar to vector list */
-	    lhs=fydelta;
-	  }
-	  rhs+=rhs_i;                         /* add loss to rhs */
-	  
-	  rt_total+=MAX(get_runtime()-rt1,0);
+		  /* compute most violating fydelta=fy-fybar and rhs for example i */
+		  find_most_violated_constraint(&fydelta,&rhs_i,&ex[i],fycache[i],n,
+					      sm,sparm,&rt_viol,&rt_psi,&argmax_count);
+		  /* add current fy-fybar to lhs of constraint */
+#pragma omp critical  
+{
+		  /* Elements' order in lists  will be different from sequential version */
+		  if(kparm->kernel_type == LINEAR) {
+		    add_list_n_ns(lhs_n,fydelta,1.0); /* add fy-fybar to sum */
+		    free_svector(fydelta);
+		  }
+		  else {
+		    append_svector_list(fydelta,lhs); /* add fy-fybar to vector list */
+		    lhs=fydelta;
+		  }
+}
+		  rhs+=rhs_i;                         /* add loss to rhs */
+		  
+		  rt_total+=MAX(get_runtime()-rt1,0);
 
 	} /* end of example loop */
 
