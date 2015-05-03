@@ -413,9 +413,12 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
  		        else
 		        {
 			    if(w+1 > p){
-			        if( issame(track,y.phone,num_obsrv-1,j) && y.phone[t]==i &&  w > p){
-				    p = w;
-				    track[t][j] = i;
+			        if(issame(track,y.phone,num_obsrv-1,j) && y.phone[t]==i){
+				    if(w > p)
+				    {
+				        p = w;
+				        track[t][j] = i;
+				    }
 				}
                            	else{
 				    p = w+1;
