@@ -127,13 +127,13 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
           getline(input2, line2);
           //cout << line<< "\n"; 
 		  vector<string> x =split(line, " ");
-		  int feature_size = x.size()-2;
-		  double *TempVector = (double*) malloc(sizeof(double)*(x.size()-2));   /////////////////////////////my_malloc
+		  int feature_size = SM_NUM_FEATURES;//x.size()-2;
+		  double *TempVector = (double*)malloc(sizeof(double)*(feature_size));   /////////////////////////////my_malloc
 
 		  
 		  CurrentNameT=split(x[0], "_");
           CurrentName=CurrentNameT[0]+"_"+CurrentNameT[1];	  
-		  for(int i=1;i<x.size()-1;i++){TempVector[i-1]=atof(x[i].c_str());}
+		  for (int i = 1; i<feature_size+1; i++){ TempVector[i - 1] = atof(x[i].c_str()); }
 		  TempLabel=atoi(x[x.size()-1].c_str());
 		  
 	      if((CurrentName==LastName||LastName=="Initial")&&!input2.eof())

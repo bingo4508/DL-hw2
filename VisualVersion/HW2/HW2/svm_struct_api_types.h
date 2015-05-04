@@ -105,6 +105,8 @@ typedef struct struct_learn_parm {
 				  option */
   /* further parameters that are passed to init_struct_model() */
   int add_your_variables_here;
+  int dummy;				/*1 -> dummy, 0 -> no dummy*/
+  int addOne;				/*1 -> add one in each fbank, 0 -> no add one in each fbank*/
 } STRUCT_LEARN_PARM;
 
 typedef struct struct_test_stats {

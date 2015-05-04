@@ -838,7 +838,8 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	       svmModel->sv_num-1,ceps,svmModel->maxdiff);
 
       rt_total+=MAX(get_runtime()-rt1,0);
-
+	  if (numIt % 30 == 0)
+		  write_struct_model("model.txt", sm, sparm);
   } while(cached_constraint || (ceps > sparm->epsilon) || 
 	  finalize_iteration(ceps,cached_constraint,sample,sm,cset,alpha,sparm)
 	 );

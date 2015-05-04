@@ -127,13 +127,13 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
           getline(input2, line2);
           //cout << line<< "\n"; 
 		  vector<string> x =split(line, " ");
-		  int feature_size = x.size()-2;
-		  double *TempVector = (double*) malloc(sizeof(double)*(x.size()-2));   /////////////////////////////my_malloc
+		  int feature_size = SM_NUM_FEATURES;//x.size()-2;
+		  double *TempVector = (double*)malloc(sizeof(double)*(feature_size));   /////////////////////////////my_malloc
 
 		  
 		  CurrentNameT=split(x[0], "_");
           CurrentName=CurrentNameT[0]+"_"+CurrentNameT[1];	  
-		  for(int i=1;i<x.size()-1;i++){TempVector[i-1]=atof(x[i].c_str());}
+		  for (int i = 1; i<feature_size+1; i++){ TempVector[i - 1] = atof(x[i].c_str()); }
 		  TempLabel=atoi(x[x.size()-1].c_str());
 		  
 	      if((CurrentName==LastName||LastName=="Initial")&&!input2.eof())
@@ -159,8 +159,6 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
               temp[n].y.id=(char*)malloc(sizeof(char)*30); 
               strcpy(temp[n].y.id,LastName.c_str());
               n++;
-			  if (n >= 10)
-				  break;
               UtteranceN=0;
               TempUtterance[UtteranceN]=TempVector;
               TempLabelS[UtteranceN]=TempLabel;
@@ -184,8 +182,12 @@ void        init_struct_model(SAMPLE sample, STRUCTMODEL *sm,
      feature space in sizePsi. This is the maximum number of different
      weights that can be learned. Later, the weight vector w will
      contain the learned weights for the model. */
-
-  sm->sizePsi=SM_PSI_SIZE; /* replace by appropriate number of features */
+  sm->sizePsi = SM_PSI_SIZE; /* replace by appropriate number of features */
+  if (sparm->addOne == 1)
+	sm->sizePsi = 70 * 48 + 48 * 48;
+  if (sparm->dummy == 1)
+	  sm->sizePsi++;
+  
   sm->num_features = SM_NUM_FEATURES;
   sm->num_phones = SM_NUM_PHONMES;
 }
@@ -456,21 +458,6 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
 
     for (t=num_obsrv-1; t>0; --t)
         ybar.phone[t-1] = track[t][ybar.phone[t]];
-
-
-	double sum = 0;
-	SVECTOR *f;
-
-	for (f = psi(x, ybar, sm, sparm); f; f = f->next)
-		sum += f->factor*sprod_ns(sm->w, f);
-	double sum2 = 0;
-	for (f = psi(x, y, sm, sparm); f; f = f->next)
-		sum2 += f->factor*sprod_ns(sm->w, f);
-	if (abs(loss(y, ybar, sparm) + sum - p) > 0.01)
-	{
-		cout << loss(y, ybar, sparm) + sum << endl;
-		cout << p << endl;
-	}
 
     // Free memory
     for(int i=0;i<num_obsrv;++i){
