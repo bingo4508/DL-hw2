@@ -299,6 +299,17 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
     return y;
 }
 
+int issame(int **y, int *x, int number,int index)
+{
+        int i;
+        for(i=0;i<number;i++)
+        {
+                if(y[i][index]!=x[i])break;
+        }
+        if(i == number)return 1;
+        else return 0;
+}
+
 LABEL       find_most_violated_constraint_slackrescaling(PATTERN x, LABEL y, 
 						     STRUCTMODEL *sm, 
 						     STRUCT_LEARN_PARM *sparm)
@@ -402,16 +413,19 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
  		        else
 		        {
 			    if(w+1 > p){
-			        if(track[t-1][j]==y.phone[t-1] && y.phone[t]==i &&  w > p){
-				    p = w;
-				    track[t][j] = i;
+			        if(issame(track,y.phone,num_obsrv-1,j) && y.phone[t]==i){
+				    if(w > p)
+				    {
+				        p = w;
+				        track[t][j] = i;
+				    }
 				}
-                            }
-                            else{
-				p = w+1;
-				track[t][j] = i;
-			    }
+                           	else{
+				    p = w+1;
+				    track[t][j] = i;
+			        }
 			    
+                            }
                         }			       
                     }
                     delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
@@ -478,6 +492,7 @@ int         empty_label(LABEL y)
  
   return(0);
 }
+
 
 SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
 		 STRUCT_LEARN_PARM *sparm)
