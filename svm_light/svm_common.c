@@ -37,7 +37,9 @@ double classify_example(MODEL *model, DOC *ex)
     return(classify_example_linear(model,ex));
 	   
   dist=0;
-  for(i=1;i<model->sv_num;i++) {  
+
+//#pragma omp parallel for reduction(+ : dist)
+  for(i=1;i<model->sv_num;i++) {
     dist+=kernel(&model->kernel_parm,model->supvec[i],ex)*model->alpha[i];
   }
   return(dist-model->b);

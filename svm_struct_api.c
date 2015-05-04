@@ -66,6 +66,16 @@ vector<string> split(string str,string sep){
     }
     return arr;
 }
+
+int is_same(int **track, LABEL y, int i){
+    // i : index of track[t]
+    for (int t=y.n-1; t>0; --t){
+	if(i != y.phone[t])
+	    return 0;
+        i = track[t][i];
+    }
+    return 1;
+}
 /******************************************************/
 
 
@@ -299,16 +309,6 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
     return y;
 }
 
-int issame(int **y, int *x, int number,int index)
-{
-        int i;
-        for(i=0;i<number;i++)
-        {
-                if(y[i][index]!=x[i])break;
-        }
-        if(i == number)return 1;
-        else return 0;
-}
 
 LABEL       find_most_violated_constraint_slackrescaling(PATTERN x, LABEL y, 
 						     STRUCTMODEL *sm, 
@@ -390,81 +390,44 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
     double **delta = (double **)new_2d_array(num_obsrv, num_state, sizeof(double));
     int **track = (int **)new_2d_array(num_obsrv, num_state, sizeof(int));
 
-    if(sparm->loss_function==0)
-    {
-    	/* Viterbi */
-    	// Forwarding
-    	for (t=0; t<num_obsrv; ++t)
-      	    for (int j=0; j<num_state; ++j){
-                if (t == 0){
-                    //log(P{a|x1}) = dot(wa,x1)
-                    delta[t][j] = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
-                }else{
-                    double p = -1e9;
-                    for (int i=0; i<num_state; ++i){
-                        double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j+1];
-                        if(t < num_obsrv-1)
-                        {
-			    if (w > p){
-                        	    p = w;
-                        	    track[t][j] = i;
-                    	    }
-		        }
- 		        else
-		        {
-			    if(w+1 > p){
-			        if(issame(track,y.phone,num_obsrv-1,j) && y.phone[t]==i){
-				    if(w > p)
-				    {
-				        p = w;
-				        track[t][j] = i;
-				    }
-				}
-                           	else{
-				    p = w+1;
-				    track[t][j] = i;
-			        }
-			    
-                            }
-                        }			       
-                    }
-                    delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
-                }    
-            }
-    }
-    else
-    {
-        /* Viterbi */
-        // Forwarding
-        for (t=0; t<num_obsrv; ++t)
-            for (int j=0; j<num_state; ++j){
-                if (t == 0){
-                    //log(P{a|x1}) = dot(wa,x1)
-                    delta[t][j] = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
-                }else{
-                    double p = -1e9;
-                    for (int i=0; i<num_state; ++i){
-                        double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j+1];
-                            if (w > p){
-                                    p = w;
-                                    track[t][j] = i;
-                            }
-
-                        }
-                    delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
+    /* Viterbi */
+    // Forwarding
+    for (t=0; t<num_obsrv; ++t)
+        for (int j=0; j<num_state; ++j){
+            if (t == 0){
+                //log(P{a|x1}) = dot(wa,x1)
+                delta[t][j] = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
+            }else{
+                double p = -1e9;
+                for (int i=0; i<num_state; ++i){
+                    double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j+1];
+		    if(w > p){
+			p = w;
+			track[t][j] = i;
+		    }
                 }
+                delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
+
+		/* handle 0/1 loss */
+		if(sparm->loss_function==0){
+		    if(t == num_obsrv-1 && j == y.phone[y.n-1] && track[t][j] == y.phone[y.n-2] && is_same(track, y, j))
+			delta[t][j] -= 1;
+		}
+            }
+  	    /* handle non 0/1 loss */
+	    if(sparm->loss_function > 0){
                 if(y.phone[t] != j)
                     delta[t][j]++;
 	    }
     }
-
+    
     // Back-tracking
     double p = -1e9;
     for (int j=0; j<num_state; ++j)
         if (delta[num_obsrv-1][j] > p){
             p = delta[num_obsrv-1][j];
             ybar.phone[num_obsrv-1] = j;
-    }    
+        }    
 
     for (t=num_obsrv-1; t>0; --t)
         ybar.phone[t-1] = track[t][ybar.phone[t]];

@@ -152,235 +152,235 @@ void svm_learn_struct(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
   /*****************/
   do { /* iteratively increase precision */
 
-    epsilon=MAX(epsilon*0.49999999999,sparm->epsilon);
-    new_precision=1;
-    if(epsilon == sparm->epsilon)   /* for final precision, find all SV */
-      tolerance=0; 
-    lparm->epsilon_crit=epsilon/2;  /* svm precision must be higher than eps */
-    if(struct_verbosity>=1)
-      printf("Setting current working precision to %g.\n",epsilon);
+	    epsilon=MAX(epsilon*0.49999999999,sparm->epsilon);
+	    new_precision=1;
+	    if(epsilon == sparm->epsilon)   /* for final precision, find all SV */
+	      tolerance=0; 
+	    lparm->epsilon_crit=epsilon/2;  /* svm precision must be higher than eps */
+	    if(struct_verbosity>=1)
+	      printf("Setting current working precision to %g.\n",epsilon);
 
-    do { /* iteration until (approx) all SV are found for current
-            precision and tolerance */
-      
-      opti_round++;
-      activenum=n;
-      dont_stop=0;
-      old_totconstraints=totconstraints;
-
-      do { /* with shrinking turned on, go through examples that keep
-	      producing new constraints */
-
-	if(struct_verbosity>=1) { 
-	  printf("Iter %i (%ld active): ",++numIt,activenum); 
-	  fflush(stdout);
-	}
-	
-	ceps=0;
-	fullround=(activenum == n);
-
-	for(i=0; i<n; i++) { /*** example loop ***/
-	  
-	  rt1=get_runtime();
-	    
-	  if((!use_shrinking) || (opti[i] != opti_round)) {
-	                                /* if the example is not shrunk
-	                                away, then see if it is necessary to 
-					add a new constraint */
-	    rt2=get_runtime();
-	    argmax_count++;
-	    if(sparm->loss_type == SLACK_RESCALING) 
-	      ybar=find_most_violated_constraint_slackrescaling(ex[i].x,
-								ex[i].y,sm,
-								sparm);
-	    else
-	      ybar=find_most_violated_constraint_marginrescaling(ex[i].x,
-								 ex[i].y,sm,
-								 sparm);
-	    rt_viol+=MAX(get_runtime()-rt2,0);
-	    
-	    if(empty_label(ybar)) {
-	      if(opti[i] != opti_round) {
-		activenum--;
-		opti[i]=opti_round; 
-	      }
-	      if(struct_verbosity>=2)
-		printf("no-incorrect-found(%i) ",i);
-	      continue;
-	    }
-	  
-	    /**** get psi(y)-psi(ybar) ****/
-	    rt2=get_runtime();
-	    if(fycache) 
-	      fy=copy_svector(fycache[i]);
-	    else
-	      fy=psi(ex[i].x,ex[i].y,sm,sparm);
-	    fybar=psi(ex[i].x,ybar,sm,sparm);
-	    rt_psi+=MAX(get_runtime()-rt2,0);
-	    
-	    /**** scale feature vector and margin by loss ****/
-	    lossval=loss(ex[i].y,ybar,sparm);
-	    if(sparm->slack_norm == 2)
-	      lossval=sqrt(lossval);
-	    if(sparm->loss_type == SLACK_RESCALING)
-	      factor=lossval;
-	    else               /* do not rescale vector for */
-	      factor=1.0;      /* margin rescaling loss type */
-	    for(f=fy;f;f=f->next)
-	      f->factor*=factor;
-	    for(f=fybar;f;f=f->next)
-	      f->factor*=-factor;
-	    margin=lossval;
-
-	    /**** create constraint for current ybar ****/
-	    append_svector_list(fy,fybar);/* append the two vector lists */
-	    doc=create_example(cset.m,0,i+1,1,fy);
-
-	    /**** compute slack for this example ****/
-	    slack=0;
-	    for(j=0;j<cset.m;j++) 
-	      if(cset.lhs[j]->slackid == i+1) {
-		if(sparm->slack_norm == 2) /* works only for linear kernel */
-		  slack=MAX(slack,cset.rhs[j]
-			          -(classify_example(svmModel,cset.lhs[j])
-				    -sm->w[sizePsi+i]/(sqrt(2*svmCnorm))));
-		else
-		  slack=MAX(slack,
-			   cset.rhs[j]-classify_example(svmModel,cset.lhs[j]));
-	      }
-	    
-	    /**** if `error' add constraint and recompute ****/
-	    dist=classify_example(svmModel,doc);
-	    ceps=MAX(ceps,margin-dist-slack);
-	    if(slack > (margin-dist+0.0001)) {
-	      printf("\nWARNING: Slack of most violated constraint is smaller than slack of working\n");
-	      printf("         set! There is probably a bug in 'find_most_violated_constraint_*'.\n");
-	      printf("Ex %d: slack=%f, newslack=%f\n",i,slack,margin-dist);
-	      /* exit(1); */
-	    }
-	    if((dist+slack)<(margin-epsilon)) { 
-	      if(struct_verbosity>=2)
-		{printf("(%i,eps=%.2f) ",i,margin-dist-slack); fflush(stdout);}
-	      if(struct_verbosity==1)
-		{printf("."); fflush(stdout);}
+	    do { /* iteration until (approx) all SV are found for current
+		    precision and tolerance */
 	      
-	      /**** resize constraint matrix and add new constraint ****/
-	      cset.m++;
-	      cset.lhs=(DOC **)realloc(cset.lhs,sizeof(DOC *)*cset.m);
-	      if(kparm->kernel_type == LINEAR) {
-		diff=add_list_ss(fy); /* store difference vector directly */
-		if(sparm->slack_norm == 1) 
-		  cset.lhs[cset.m-1]=create_example(cset.m-1,0,i+1,1,
-						    copy_svector(diff));
-		else if(sparm->slack_norm == 2) {
-		  /**** add squared slack variable to feature vector ****/
-		  slackv[0].wnum=sizePsi+i;
-		  slackv[0].weight=1/(sqrt(2*svmCnorm));
-		  slackv[1].wnum=0; /*terminator*/
-		  slackvec=create_svector(slackv,NULL,1.0);
-		  cset.lhs[cset.m-1]=create_example(cset.m-1,0,i+1,1,
-						    add_ss(diff,slackvec));
-		  free_svector(slackvec);
+	      opti_round++;
+	      activenum=n;
+	      dont_stop=0;
+	      old_totconstraints=totconstraints;
+
+	      do { /* with shrinking turned on, go through examples that keep
+		      producing new constraints */
+
+		if(struct_verbosity>=1) { 
+		  printf("Iter %i (%ld active): ",++numIt,activenum); 
+		  fflush(stdout);
 		}
-		free_svector(diff);
-	      }
-	      else { /* kernel is used */
-		if(sparm->slack_norm == 1) 
-		  cset.lhs[cset.m-1]=create_example(cset.m-1,0,i+1,1,
-						    copy_svector(fy));
-		else if(sparm->slack_norm == 2)
-		  exit(1);
-	      }
-	      cset.rhs=(double *)realloc(cset.rhs,sizeof(double)*cset.m);
-	      cset.rhs[cset.m-1]=margin;
-	      alpha=(double *)realloc(alpha,sizeof(double)*cset.m);
-	      alpha[cset.m-1]=0;
-	      alphahist=(long *)realloc(alphahist,sizeof(long)*cset.m);
-	      alphahist[cset.m-1]=optcount;
-	      newconstraints++;
-	      totconstraints++;
-	    }
-	    else {
-	      printf("+"); fflush(stdout); 
-	      if(opti[i] != opti_round) {
-		activenum--;
-		opti[i]=opti_round; 
-	      }
-	    }
+		
+		ceps=0;
+		fullround=(activenum == n);
 
-	    free_example(doc,0);
-	    free_svector(fy); /* this also free's fybar */
-	    free_label(ybar);
-	  }
+		for(i=0; i<n; i++) { /*** example loop ***/
+		  
+		  rt1=get_runtime();
+		    
+		  if((!use_shrinking) || (opti[i] != opti_round)) {
+						/* if the example is not shrunk
+						away, then see if it is necessary to 
+						add a new constraint */
+		    rt2=get_runtime();
+		    argmax_count++;
+		    if(sparm->loss_type == SLACK_RESCALING) 
+		      ybar=find_most_violated_constraint_slackrescaling(ex[i].x,
+									ex[i].y,sm,
+									sparm);
+		    else
+		      ybar=find_most_violated_constraint_marginrescaling(ex[i].x,
+									 ex[i].y,sm,
+									 sparm);
+		    rt_viol+=MAX(get_runtime()-rt2,0);
+		    
+		    if(empty_label(ybar)) {
+		      if(opti[i] != opti_round) {
+			activenum--;
+			opti[i]=opti_round; 
+		      }
+		      if(struct_verbosity>=2)
+			printf("no-incorrect-found(%i) ",i);
+		      continue;
+		    }
+		  
+		    /**** get psi(y)-psi(ybar) ****/
+		    rt2=get_runtime();
+		    if(fycache) 
+		      fy=copy_svector(fycache[i]);
+		    else
+		      fy=psi(ex[i].x,ex[i].y,sm,sparm);
+		    fybar=psi(ex[i].x,ybar,sm,sparm);
+		    rt_psi+=MAX(get_runtime()-rt2,0);
+		    
+		    /**** scale feature vector and margin by loss ****/
+		    lossval=loss(ex[i].y,ybar,sparm);
+		    if(sparm->slack_norm == 2)
+		      lossval=sqrt(lossval);
+		    if(sparm->loss_type == SLACK_RESCALING)
+		      factor=lossval;
+		    else               /* do not rescale vector for */
+		      factor=1.0;      /* margin rescaling loss type */
+		    for(f=fy;f;f=f->next)
+		      f->factor*=factor;
+		    for(f=fybar;f;f=f->next)
+		      f->factor*=-factor;
+		    margin=lossval;
 
-	  /**** get new QP solution ****/
-	  if((newconstraints >= sparm->newconstretrain) 
-	     || ((newconstraints > 0) && (i == n-1))
-	     || (new_precision && (i == n-1))) {
-	    if(struct_verbosity>=1) {
-	      printf("*");fflush(stdout);
-	    }
-	    rt2=get_runtime();
-	    free_model(svmModel,0);
-	    svmModel=(MODEL *)my_malloc(sizeof(MODEL));
-	    /* Always get a new kernel cache. It is not possible to use the
-	       same cache for two different training runs */
-	    if(kparm->kernel_type != LINEAR)
-	      kcache=kernel_cache_init(MAX(cset.m,1),lparm->kernel_cache_size);
-	    /* Run the QP solver on cset. */
-	    svm_learn_optimization(cset.lhs,cset.rhs,cset.m,sizePsi+n,
-				   lparm,kparm,kcache,svmModel,alpha);
-	    if(kcache)
-	      kernel_cache_cleanup(kcache);
-	    /* Always add weight vector, in case part of the kernel is
-	       linear. If not, ignore the weight vector since its
-	       content is bogus. */
-	    add_weight_vector_to_linear_model(svmModel);
-	    sm->svm_model=svmModel;
-	    sm->w=svmModel->lin_weights; /* short cut to weight vector */
-	    optcount++;
-	    /* keep track of when each constraint was last
-	       active. constraints marked with -1 are not updated */
-	    for(j=0;j<cset.m;j++) 
-	      if((alphahist[j]>-1) && (alpha[j] != 0))  
-		alphahist[j]=optcount;
-	    rt_opt+=MAX(get_runtime()-rt2,0);
-	    
-	    if(new_precision && (epsilon <= sparm->epsilon))  
-	      dont_stop=1; /* make sure we take one final pass */
-	    new_precision=0;
-	    newconstraints=0;
-	  }	
+		    /**** create constraint for current ybar ****/
+		    append_svector_list(fy,fybar);/* append the two vector lists */
+		    doc=create_example(cset.m,0,i+1,1,fy);
 
-	  rt_total+=MAX(get_runtime()-rt1,0);
+		    /**** compute slack for this example ****/
+		    slack=0;
+		    for(j=0;j<cset.m;j++) 
+		      if(cset.lhs[j]->slackid == i+1) {
+			if(sparm->slack_norm == 2) /* works only for linear kernel */
+			  slack=MAX(slack,cset.rhs[j]
+					  -(classify_example(svmModel,cset.lhs[j])
+					    -sm->w[sizePsi+i]/(sqrt(2*svmCnorm))));
+			else
+			  slack=MAX(slack,
+				   cset.rhs[j]-classify_example(svmModel,cset.lhs[j]));
+		      }
+		    
+		    /**** if `error' add constraint and recompute ****/
+		    dist=classify_example(svmModel,doc);
+		    ceps=MAX(ceps,margin-dist-slack);
+		    if(slack > (margin-dist+0.0001)) {
+		      printf("\nWARNING: Slack of most violated constraint is smaller than slack of working\n");
+		      printf("         set! There is probably a bug in 'find_most_violated_constraint_*'.\n");
+		      printf("Ex %d: slack=%f, newslack=%f\n",i,slack,margin-dist);
+		      /* exit(1); */
+		    }
+		    if((dist+slack)<(margin-epsilon)) { 
+		      if(struct_verbosity>=2)
+			{printf("(%i,eps=%.2f) ",i,margin-dist-slack); fflush(stdout);}
+		      if(struct_verbosity==1)
+			{printf("."); fflush(stdout);}
+		      
+		      /**** resize constraint matrix and add new constraint ****/
+		      cset.m++;
+		      cset.lhs=(DOC **)realloc(cset.lhs,sizeof(DOC *)*cset.m);
+		      if(kparm->kernel_type == LINEAR) {
+			diff=add_list_ss(fy); /* store difference vector directly */
+			if(sparm->slack_norm == 1) 
+			  cset.lhs[cset.m-1]=create_example(cset.m-1,0,i+1,1,
+							    copy_svector(diff));
+			else if(sparm->slack_norm == 2) {
+			  /**** add squared slack variable to feature vector ****/
+			  slackv[0].wnum=sizePsi+i;
+			  slackv[0].weight=1/(sqrt(2*svmCnorm));
+			  slackv[1].wnum=0; /*terminator*/
+			  slackvec=create_svector(slackv,NULL,1.0);
+			  cset.lhs[cset.m-1]=create_example(cset.m-1,0,i+1,1,
+							    add_ss(diff,slackvec));
+			  free_svector(slackvec);
+			}
+			free_svector(diff);
+		      }
+		      else { /* kernel is used */
+			if(sparm->slack_norm == 1) 
+			  cset.lhs[cset.m-1]=create_example(cset.m-1,0,i+1,1,
+							    copy_svector(fy));
+			else if(sparm->slack_norm == 2)
+			  exit(1);
+		      }
+		      cset.rhs=(double *)realloc(cset.rhs,sizeof(double)*cset.m);
+		      cset.rhs[cset.m-1]=margin;
+		      alpha=(double *)realloc(alpha,sizeof(double)*cset.m);
+		      alpha[cset.m-1]=0;
+		      alphahist=(long *)realloc(alphahist,sizeof(long)*cset.m);
+		      alphahist[cset.m-1]=optcount;
+		      newconstraints++;
+		      totconstraints++;
+		    }
+		    else {
+		      printf("+"); fflush(stdout); 
+		      if(opti[i] != opti_round) {
+			activenum--;
+			opti[i]=opti_round; 
+		      }
+		    }
 
-	} /* end of example loop */
+		    free_example(doc,0);
+		    free_svector(fy); /* this also free's fybar */
+		    free_label(ybar);
+		  }
 
-	rt1=get_runtime();
-	
-	if(struct_verbosity>=1)
-	  printf("(NumConst=%d, SV=%ld, CEps=%.4f, QPEps=%.4f)\n",cset.m,
-		 svmModel->sv_num-1,ceps,svmModel->maxdiff);
-	
-	/* Check if some of the linear constraints have not been
-	   active in a while. Those constraints are then removed to
-	   avoid bloating the working set beyond necessity. */
-	if(struct_verbosity>=2)
-	  printf("Reducing working set...");fflush(stdout);
-	remove_inactive_constraints(&cset,alpha,optcount,alphahist,
-				    MAX(50,optcount-lastoptcount));
-	lastoptcount=optcount;
-	if(struct_verbosity>=2)
-	  printf("done. (NumConst=%d)\n",cset.m);
-	
-	rt_total+=MAX(get_runtime()-rt1,0);
-	
-      } while(use_shrinking && (activenum > 0)); /* when using shrinking, 
-						    repeat until all examples 
-						    produced no constraint at
-						    least once */
+		  /**** get new QP solution ****/
+		  if((newconstraints >= sparm->newconstretrain) 
+		     || ((newconstraints > 0) && (i == n-1))
+		     || (new_precision && (i == n-1))) {
+		    if(struct_verbosity>=1) {
+		      printf("*");fflush(stdout);
+		    }
+		    rt2=get_runtime();
+		    free_model(svmModel,0);
+		    svmModel=(MODEL *)my_malloc(sizeof(MODEL));
+		    /* Always get a new kernel cache. It is not possible to use the
+		       same cache for two different training runs */
+		    if(kparm->kernel_type != LINEAR)
+		      kcache=kernel_cache_init(MAX(cset.m,1),lparm->kernel_cache_size);
+		    /* Run the QP solver on cset. */
+		    svm_learn_optimization(cset.lhs,cset.rhs,cset.m,sizePsi+n,
+					   lparm,kparm,kcache,svmModel,alpha);
+		    if(kcache)
+		      kernel_cache_cleanup(kcache);
+		    /* Always add weight vector, in case part of the kernel is
+		       linear. If not, ignore the weight vector since its
+		       content is bogus. */
+		    add_weight_vector_to_linear_model(svmModel);
+		    sm->svm_model=svmModel;
+		    sm->w=svmModel->lin_weights; /* short cut to weight vector */
+		    optcount++;
+		    /* keep track of when each constraint was last
+		       active. constraints marked with -1 are not updated */
+		    for(j=0;j<cset.m;j++) 
+		      if((alphahist[j]>-1) && (alpha[j] != 0))  
+			alphahist[j]=optcount;
+		    rt_opt+=MAX(get_runtime()-rt2,0);
+		    
+		    if(new_precision && (epsilon <= sparm->epsilon))  
+		      dont_stop=1; /* make sure we take one final pass */
+		    new_precision=0;
+		    newconstraints=0;
+		  }	
 
-    } while(((totconstraints - old_totconstraints) > tolerance) || dont_stop);
+		  rt_total+=MAX(get_runtime()-rt1,0);
+
+		} /* end of example loop */
+
+		rt1=get_runtime();
+		
+		if(struct_verbosity>=1)
+		  printf("(NumConst=%d, SV=%ld, CEps=%.4f, QPEps=%.4f)\n",cset.m,
+			 svmModel->sv_num-1,ceps,svmModel->maxdiff);
+		
+		/* Check if some of the linear constraints have not been
+		   active in a while. Those constraints are then removed to
+		   avoid bloating the working set beyond necessity. */
+		if(struct_verbosity>=2)
+		  printf("Reducing working set...");fflush(stdout);
+		remove_inactive_constraints(&cset,alpha,optcount,alphahist,
+					    MAX(50,optcount-lastoptcount));
+		lastoptcount=optcount;
+		if(struct_verbosity>=2)
+		  printf("done. (NumConst=%d)\n",cset.m);
+		
+		rt_total+=MAX(get_runtime()-rt1,0);
+		
+	      } while(use_shrinking && (activenum > 0)); /* when using shrinking, 
+							    repeat until all examples 
+							    produced no constraint at
+							    least once */
+
+	    } while(((totconstraints - old_totconstraints) > tolerance) || dont_stop);
 
   } while((epsilon > sparm->epsilon) 
 	  || finalize_iteration(ceps,0,sample,sm,cset,alpha,sparm));  
@@ -620,9 +620,11 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
       alphasum=0;
       for(j=0;(j<cset.m);j++) 
 	  alphasum+=alpha[j];
-      for(j=0,slack=-1;(j<cset.m) && (slack==-1);j++)  
+
+      for(j=0,slack=-1;(j<cset.m) && (slack == -1);j++){
 	if(alpha[j] > alphasum/cset.m)
 	  slack=MAX(0,cset.rhs[j]-classify_example(svmModel,cset.lhs[j]));
+      }
       slack=MAX(0,slack);
 
       rt_total+=MAX(get_runtime()-rt1,0);
@@ -631,70 +633,69 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
       lhs=NULL;
       rhs=0;
       if(alg_type == ONESLACK_DUAL_CACHE_ALG) {
-	rt1=get_runtime();
-	/* Compute violation of constraints in cache for current w */
-	if(struct_verbosity>=2) rt2=get_runtime();
-	update_constraint_cache_for_model(ccache, svmModel);
-	if(struct_verbosity>=2) rt_cacheupdate+=MAX(get_runtime()-rt2,0);
-	/* Is there is a sufficiently violated constraint in cache? */
-	viol=compute_violation_of_constraint_in_cache(ccache,epsilon_est/2);
-	if(viol-slack > MAX(epsilon_est/10,sparm->epsilon)) { 
-	  /* There is a sufficiently violated constraint in cache, so
-	     use this constraint in this iteration. */
-	  if(struct_verbosity>=2) rt2=get_runtime();
-	  viol=find_most_violated_joint_constraint_in_cache(ccache,
-					       epsilon_est/2,lhs_n,&lhs,&rhs);
-	  if(struct_verbosity>=2) rt_cacheconst+=MAX(get_runtime()-rt2,0);
-	  cached_constraint=1;
-	}
-	else {
-	  /* There is no sufficiently violated constraint in cache, so
-	     update cache by computing most violated constraint
-	     explicitly for batch_size examples. */
-	  viol_est=0;
-	  progress=0;
-	  viol=compute_violation_of_constraint_in_cache(ccache,0);
-	  for(j=0;(j<batch_size) || ((j<n)&&(viol-slack<sparm->epsilon));j++) {
-	    if(struct_verbosity>=1) 
-	      print_percent_progress(&progress,n,10,".");
-	    uptr=uptr % n;
-	    if(randmapping) 
-	      i=randmapping[uptr];
-	    else
-	      i=uptr;
-	    /* find most violating fydelta=fy-fybar and rhs for example i */
-	    find_most_violated_constraint(&fydelta,&rhs_i,&ex[i],
-					  fycache[i],n,sm,sparm,
-					  &rt_viol,&rt_psi,&argmax_count);
-	    /* add current fy-fybar and loss to cache */
-	    if(struct_verbosity>=2) rt2=get_runtime();
-	    viol+=add_constraint_to_constraint_cache(ccache,sm->svm_model,
-			     i,fydelta,rhs_i,0.0001*sparm->epsilon/n,
-			     sparm->ccache_size,&rt_cachesum);
-	    if(struct_verbosity>=2) rt_cacheadd+=MAX(get_runtime()-rt2,0);
-	    viol_est+=ccache->constlist[i]->viol;
-	    uptr++;
-	  }
-	  cached_constraint=(j<n);
-	  if(struct_verbosity>=2) rt2=get_runtime();
-	  if(cached_constraint)
-	    viol=find_most_violated_joint_constraint_in_cache(ccache,
-					       epsilon_est/2,lhs_n,&lhs,&rhs);
-	  else
-	    viol=find_most_violated_joint_constraint_in_cache(ccache,0,lhs_n,
-							 &lhs,&rhs);
-	  if(struct_verbosity>=2) rt_cacheconst+=MAX(get_runtime()-rt2,0);
-	  viol_est*=((double)n/j);
-	  epsilon_est=(1-(double)j/n)*epsilon_est+(double)j/n*(viol_est-slack);
-	  if((struct_verbosity >= 1) && (j!=n))
-	    printf("(upd=%5.1f%%,eps^=%.4f,eps*=%.4f)",
-		   100.0*j/n,viol_est-slack,epsilon_est);
-	}
-	lhsXw=rhs-viol;
+		rt1=get_runtime();
+		/* Compute violation of constraints in cache for current w */
+		if(struct_verbosity>=2) rt2=get_runtime();
+		update_constraint_cache_for_model(ccache, svmModel);
+		if(struct_verbosity>=2) rt_cacheupdate+=MAX(get_runtime()-rt2,0);
+		/* Is there is a sufficiently violated constraint in cache? */
+		viol=compute_violation_of_constraint_in_cache(ccache,epsilon_est/2);
+		if(viol-slack > MAX(epsilon_est/10,sparm->epsilon)) { 
+		  /* There is a sufficiently violated constraint in cache, so
+		     use this constraint in this iteration. */
+		  if(struct_verbosity>=2) rt2=get_runtime();
+		  viol=find_most_violated_joint_constraint_in_cache(ccache,
+						       epsilon_est/2,lhs_n,&lhs,&rhs);
+		  if(struct_verbosity>=2) rt_cacheconst+=MAX(get_runtime()-rt2,0);
+		  cached_constraint=1;
+		}
+		else {
+		  /* There is no sufficiently violated constraint in cache, so
+		     update cache by computing most violated constraint
+		     explicitly for batch_size examples. */
+		  viol_est=0;
+		  progress=0;
+		  viol=compute_violation_of_constraint_in_cache(ccache,0);
+		  for(j=0;(j<batch_size) || ((j<n)&&(viol-slack<sparm->epsilon));j++) {
+		    if(struct_verbosity>=1) 
+		      print_percent_progress(&progress,n,10,".");
+		    uptr=uptr % n;
+		    if(randmapping) 
+		      i=randmapping[uptr];
+		    else
+		      i=uptr;
+		    /* find most violating fydelta=fy-fybar and rhs for example i */
+		    find_most_violated_constraint(&fydelta,&rhs_i,&ex[i],
+						  fycache[i],n,sm,sparm,
+						  &rt_viol,&rt_psi,&argmax_count);
+		    /* add current fy-fybar and loss to cache */
+		    if(struct_verbosity>=2) rt2=get_runtime();
+		    viol+=add_constraint_to_constraint_cache(ccache,sm->svm_model,
+				     i,fydelta,rhs_i,0.0001*sparm->epsilon/n,
+				     sparm->ccache_size,&rt_cachesum);
+		    if(struct_verbosity>=2) rt_cacheadd+=MAX(get_runtime()-rt2,0);
+		    viol_est+=ccache->constlist[i]->viol;
+		    uptr++;
+		  }
+		  cached_constraint=(j<n);
+		  if(struct_verbosity>=2) rt2=get_runtime();
+		  if(cached_constraint)
+		    viol=find_most_violated_joint_constraint_in_cache(ccache,
+						       epsilon_est/2,lhs_n,&lhs,&rhs);
+		  else
+		    viol=find_most_violated_joint_constraint_in_cache(ccache,0,lhs_n,
+								 &lhs,&rhs);
+		  if(struct_verbosity>=2) rt_cacheconst+=MAX(get_runtime()-rt2,0);
+		  viol_est*=((double)n/j);
+		  epsilon_est=(1-(double)j/n)*epsilon_est+(double)j/n*(viol_est-slack);
+		  if((struct_verbosity >= 1) && (j!=n))
+		    printf("(upd=%5.1f%%,eps^=%.4f,eps*=%.4f)",
+			   100.0*j/n,viol_est-slack,epsilon_est);
+		}
+		lhsXw=rhs-viol;
 
-	rt_total+=MAX(get_runtime()-rt1,0);
-      }
-      else { 
+		rt_total+=MAX(get_runtime()-rt1,0);
+      }else { 
 	/* do not use constraint from cache */
 	rt1=get_runtime();
 	cached_constraint=0;
@@ -703,7 +704,7 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	progress=0;
 	rt_total+=MAX(get_runtime()-rt1,0);
 
-//omp_set_num_threads(2);
+omp_set_num_threads(6);
 #pragma omp parallel for private (fydelta, rhs_i, rt1) reduction (+ : rt_viol, rt_psi, argmax_count, rhs, rt_total)
 	for(int i=0; i<n; i++) {
 		  rt1=get_runtime();
@@ -747,7 +748,6 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	viol=rhs-lhsXw;
 
 	rt_total+=MAX(get_runtime()-rt1,0);
-
       } /* end of finding most violated joint constraint */
 
       rt1=get_runtime();
@@ -760,7 +760,7 @@ void svm_learn_struct_joint(SAMPLE sample, STRUCT_LEARN_PARM *sparm,
 	/* exit(1); */
       }
       ceps=MAX(0,rhs-lhsXw-slack);
-      if((ceps > sparm->epsilon) || cached_constraint) { 
+      if((ceps > sparm->epsilon) || cached_constraint) {
 	/**** resize constraint matrix and add new constraint ****/
 	cset.lhs=(DOC **)realloc(cset.lhs,sizeof(DOC *)*(cset.m+1));
 	cset.lhs[cset.m]=create_example(cset.m,0,1,1,lhs);
@@ -1064,6 +1064,7 @@ MATRIX *update_kernel_matrix(MATRIX *matrix, int newpos, CONSTSET *cset,
   if((!matrix) || (maxkernelid>=matrix->m))
     matrix=realloc_matrix(matrix,maxkernelid+50,maxkernelid+50);
 
+//#pragma omp parallel for
   for(i=0;i<cset->m;i++) {
     kval=kernel(kparm,cset->lhs[newpos],cset->lhs[i]);
     matrix->element[newid][cset->lhs[i]->kernelid]=kval;

@@ -11,11 +11,11 @@ LD = gcc
 #Uncomment the following line to make CYGWIN produce stand-alone Windows executables
 #SFLAGS= -mno-cygwin
 
-CFLAGS=  $(SFLAGS) -O3                     # release C-Compiler flags
-LFLAGS=  $(SFLAGS) -O3                     # release linker flags
+CFLAGS=  $(SFLAGS) -O3 -fopenmp                    # release C-Compiler flags
+LFLAGS=  $(SFLAGS) -O3 -fopenmp                    # release linker flags
 #CFLAGS= $(SFLAGS) -pg -Wall -pedantic      # debugging C-Compiler flags
 #LFLAGS= $(SFLAGS) -pg                      # debugging linker flags
-LIBS=-L. -lm                               # used libraries
+LIBS=-L. -lm                                # used libraries
 
 all: svm_learn_hideo svm_classify
 
