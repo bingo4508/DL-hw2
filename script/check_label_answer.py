@@ -18,18 +18,21 @@ answer_map = {}
 with open(predict, 'r') as f:
     for l in f:
 	l = l.strip().split()
-        predict_map[l[0]] = l[1:]
+        predict_map[l[0]] = l[2:]
 
 with open(answer, 'r') as f:
     for l in f:
 	l = l.strip().split()
-        answer_map[l[0]] = l[1:]
+        answer_map[l[0]] = l[2:]
 
 accuracy = 0
 for k, v in predict_map.items():
     if(len(v) != len(answer_map[k])):
         print("ERROR %s: %d/%d" % (k, len(v), len(answer_map[k])))
-    a = float(len(set(v) & set(answer_map[k])))/len(v)
+    c = 0
+    for i in range(len(v)):
+        c += 1 if v[i] == answer_map[k][i] else 0
+    a = float(c)/len(v)
     print("%s: %f" % (k, a))
     accuracy += a
 

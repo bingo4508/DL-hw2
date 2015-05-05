@@ -34,5 +34,5 @@ with open(mapping, 'r') as f:
 # Output data
 with open(out_data, 'w') as fo:
     for k,v in label_map.items():
-	fo.write("%s %s\n" % (k, ' '.join([label_map2[e] for e in v])))
+	fo.write("%s %d %s\n" % (k, len(v),' '.join([label_map2[e] for e in v])))
 
