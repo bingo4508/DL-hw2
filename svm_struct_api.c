@@ -676,10 +676,11 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 void        write_label(FILE *fp, LABEL y)
 {
   /* Writes label y to file handle fp. */
+  int map_48_39_idx[] = { 0, 1, 2, 0, 4, 2, 6, 1, 8, 37, 10, 11, 12, 13, 27, 29, 37, 17, 18, 19, 20, 21, 22, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 37, 44, 45, 46, 36 };
   fprintf(fp, "%s %d ", y.id, y.n);
   int i;
   for (i = 0; i < y.n; i++)
-  	fprintf(fp, "%d ", y.phone[i]);
+  	fprintf(fp, "%d ", map_48_39_idx[y.phone[i]]);
   fprintf(fp, "\n");
 } 
 
