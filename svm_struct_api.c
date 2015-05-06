@@ -402,17 +402,20 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
                 for (int i=0; i<num_state; ++i){
                     double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j+1];
 		    if(w > p){
-			p = w;
-			track[t][j] = i;
+			if(sparm->loss_function==0){
+                    	    if(t == num_obsrv-1 && j == y.phone[y.n-1] && track[t][j] == y.phone[y.n-2] && is_same(track, y, j) && w-1 > p)
+			    {
+                            	p = w-1;
+			    	track[t][j] = i;
+			    }
+                	}		
+			else{
+			    p = w;
+			    track[t][j] = i;
+			}
 		    }
                 }
                 delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
-
-		/* handle 0/1 loss */
-		if(sparm->loss_function==0){
-		    if(t == num_obsrv-1 && j == y.phone[y.n-1] && track[t][j] == y.phone[y.n-2] && is_same(track, y, j))
-			delta[t][j] -= 1;
-		}
             }
   	    /* handle non 0/1 loss */
 	    if(sparm->loss_function > 0){
