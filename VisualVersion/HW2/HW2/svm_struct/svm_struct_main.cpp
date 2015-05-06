@@ -204,6 +204,7 @@ void read_input_parameters(int argc,char *argv[],char *trainfile,
   if((i+1)<argc) {
     strcpy (modelfile, argv[i+1]);
   }
+  strcpy(struct_parm->modelfile, modelfile);
   if(learn_parm->svm_iter_to_shrink == -9999) {
     learn_parm->svm_iter_to_shrink=100;
   }

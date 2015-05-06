@@ -5,7 +5,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerCommandArguments>-c 100 -l 1 -o 2 C:\Users\KuoFeng\Desktop\HW2Merge model</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>C:\Users\KuoFeng\Desktop\HW2Merge model output answer</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>
