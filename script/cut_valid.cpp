@@ -130,7 +130,7 @@ SAMPLE      read_struct_examples(char* fname)
   return(sample);
 }
 
-void split_valid(char *input, float valid_ratio)
+void split_valid(char *input, float valid_ratio, int is_train)
 {
 	string str(input);
 	puts("Loading data...");
@@ -147,6 +147,8 @@ void split_valid(char *input, float valid_ratio)
 	        fv << ex.x.id << "_" << j+1 << " ";
 		for(int k=0;k<SM_NUM_FEATURES;k++)
 	            fv << std::fixed << std::setprecision(6) <<ex.x.utterance[j][k] << " ";
+		if(is_train)
+		    fv << ex.y.phone[j];
 		fv << endl;
 	    }
 	}
@@ -156,6 +158,8 @@ void split_valid(char *input, float valid_ratio)
 	        ft << ex.x.id << "_" << j+1 << " ";
 		for(int k=0;k<SM_NUM_FEATURES;k++)
 	            ft <<std::fixed << std::setprecision(6)<< ex.x.utterance[j][k] << " ";
+		if(is_train)
+		    ft << ex.y.phone[j];
 		ft << endl;
 	    }
 	}	
@@ -163,10 +167,15 @@ void split_valid(char *input, float valid_ratio)
 
 int main(int argc, char* argv[])
 {
-	char *input = argv[1];
+	if(argc < 3){
+	    printf("args: $input(.ark) $valid_ratio(ex:0.05) $is_train(1/0)\n");
+	    return 0;
+	}
+   	char *input = argv[1];
 	float valid_ratio = atof(argv[2]);
+	int is_train = atoi(argv[3]);
 	
-	split_valid(input, valid_ratio);
+	split_valid(input, valid_ratio, is_train);
 	return 0;
 }
 
