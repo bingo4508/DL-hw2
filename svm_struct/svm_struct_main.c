@@ -128,6 +128,8 @@ void read_input_parameters(int argc,char *argv[],char *trainfile,
   struct_parm->newconstretrain=100;
   struct_parm->ccache_size=5;
   struct_parm->batch_size=100;
+  struct_parm->dummy = 0;
+  struct_parm->addOne = 0;
 
   strcpy (modelfile, "svm_struct_model");
   strcpy (learn_parm->predfile, "trans_predictions");
