@@ -410,13 +410,11 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
 				    p = w-1;
 			    	    track[t][j] = i;
 				}
-			    }
-			    else{
+			    }else{
                                 p = w;
                                 track[t][j] = i;
                             }
-                	}		
-			else{
+                	}else{
 			    p = w;
 			    track[t][j] = i;
 			}
@@ -427,7 +425,7 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
   	    /* handle non 0/1 loss */
 	    if(sparm->loss_function > 0){
                 if(y.phone[t] != j)
-                    delta[t][j]++;
+                    delta[t][j]+=(float)1.0/num_obsrv;
 	    }
     }
     
