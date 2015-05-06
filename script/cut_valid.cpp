@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <iomanip>
+#include <algorithm>
 
 using namespace std;
 
@@ -138,11 +139,16 @@ void split_valid(char *input, float valid_ratio, int is_train)
 	ofstream fv((str+".val").c_str());
 	ofstream ft((str+".train").c_str());
 
-	printf("Spliting... Top %f%% is validation\n",valid_ratio*100);
+	puts("Spliting...\n");
 	int i;
+	vector<int> list;
+	for(int i=0;i<s.n;i++)	list.push_back(i);
+	random_shuffle(list.begin(), list.end());
 	EXAMPLE ex;
-	for(i=0;i<valid_ratio*s.n;i++){
-	    ex = s.examples[i];
+	int ii=0;
+	for(vector<int>::iterator it=list.begin();it!=list.end();++it,++ii){
+	  if(ii < valid_ratio*s.n){
+	    ex = s.examples[*it];
 	    for(int j=0;j<ex.x.n;j++){
 	        fv << ex.x.id << "_" << j+1 << " ";
 		for(int k=0;k<SM_NUM_FEATURES;k++)
@@ -151,9 +157,8 @@ void split_valid(char *input, float valid_ratio, int is_train)
 		    fv << ex.y.phone[j];
 		fv << endl;
 	    }
-	}
-	for(;i<s.n;i++){
-	    ex = s.examples[i];
+	  }else{
+	    ex = s.examples[*it];
 	    for(int j=0;j<ex.x.n;j++){
 	        ft << ex.x.id << "_" << j+1 << " ";
 		for(int k=0;k<SM_NUM_FEATURES;k++)
@@ -162,6 +167,7 @@ void split_valid(char *input, float valid_ratio, int is_train)
 		    ft << ex.y.phone[j];
 		ft << endl;
 	    }
+	   }
 	}	
 }
 
