@@ -138,7 +138,14 @@ SAMPLE      read_struct_examples(char* fname, STRUCT_LEARN_PARM *sparm)
           //cout << line<< "\n"; 
 		  vector<string> x =split(line, " ");
 		  int feature_size = SM_NUM_FEATURES;//x.size()-2;
-		  double *TempVector = (double*)malloc(sizeof(double)*(feature_size));   /////////////////////////////my_malloc
+		  double *TempVector;
+		  if (sparm->addOne)
+		  {
+			  TempVector = (double*)malloc(sizeof(double)*(feature_size+1));   /////////////////////////////my_malloc
+			  TempVector[feature_size] = 1;
+		  }
+		  else
+			  TempVector = (double*)malloc(sizeof(double)*(feature_size));   /////////////////////////////my_malloc
 
 		  
 		  CurrentNameT=split(x[0], "_");
@@ -192,9 +199,17 @@ void        init_struct_model(SAMPLE sample, STRUCTMODEL *sm,
      feature space in sizePsi. This is the maximum number of different
      weights that can be learned. Later, the weight vector w will
      contain the learned weights for the model. */
-
-  sm->sizePsi=SM_PSI_SIZE; /* replace by appropriate number of features */
+  sm->sizePsi = SM_NUM_FEATURES*SM_NUM_PHONMES+SM_NUM_PHONMES*SM_NUM_PHONMES; /* replace by appropriate number of features */
   sm->num_features = SM_NUM_FEATURES;
+  if (sparm->addOne == 1)
+  {
+	  sm->sizePsi = (SM_NUM_FEATURES + 1)*SM_NUM_PHONMES + SM_NUM_PHONMES*SM_NUM_PHONMES;
+	  sm->num_features++;
+  }
+  if (sparm->dummy == 1)
+	  sm->sizePsi += sm->num_features;
+  
+  
   sm->num_phones = SM_NUM_PHONMES;
 }
 
@@ -257,7 +272,12 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
     int num_state = sm->num_phones;
     int num_obsrv = x.n;
     int num_feature = sm->num_features;
-    int tran_start = num_feature*num_state;
+	int tran_start;
+	if (sparm->dummy)
+		tran_start = num_feature*(num_state+1);
+	else
+		tran_start = num_feature*num_state;
+
     int t,j,i;
 
     double **delta = (double **)new_2d_array(num_obsrv, num_state, sizeof(double));
@@ -268,8 +288,10 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
     for (t=0; t<num_obsrv; ++t)
         for (j=0; j<num_state; ++j){
             if (t == 0){
-                //log(P{a|x1}) = dot(wa,x1)
-                delta[t][j] = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
+                //log(P{a|x1}) = dot(wa,x1
+				delta[t][j] = dot(&sm->w[j*num_feature + 1], x.utterance[t], num_feature);
+				if (sparm->dummy)
+					delta[t][j] += dot(&sm->w[tran_start - num_feature + 1], x.utterance[t], num_feature);
             }else{
                 double p = -1e9;
                 for (i=0; i<num_state; ++i){
@@ -280,6 +302,8 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
                     }
                 }
                 delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
+				if (sparm->dummy)
+					delta[t][j] += dot(&sm->w[tran_start - num_feature + 1], x.utterance[t], num_feature);
 #ifdef DEBUG
 	printf("t:%d\tj:%d\tp:%f\tdot:%f\n",t,j,p,dot(&sm->w[j*num_feature], x.utterance[t], num_feature));
 #endif
@@ -308,7 +332,6 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
 
     return y;
 }
-
 
 LABEL       find_most_violated_constraint_slackrescaling(PATTERN x, LABEL y, 
 						     STRUCTMODEL *sm, 
@@ -383,72 +406,83 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
     int num_state = sm->num_phones;
     int num_obsrv = x.n;
     int num_feature = sm->num_features;
-    int tran_start = num_feature*num_state;
+	int tran_start;
+	if (sparm->dummy)
+		tran_start = num_feature*(num_state+1);
+	else
+		tran_start = num_feature*num_state;
     int t;
 
     
-    double **delta = (double **)new_2d_array(num_obsrv, num_state, sizeof(double));
-    int **track = (int **)new_2d_array(num_obsrv, num_state, sizeof(int));
+	double **delta = (double **)new_2d_array(num_obsrv, num_state, sizeof(double));
+	int **track = (int **)new_2d_array(num_obsrv, num_state, sizeof(int));
 
-    /* Viterbi */
-    // Forwarding
-    for (t=0; t<num_obsrv; ++t)
-        for (int j=0; j<num_state; ++j){
-            if (t == 0){
-                //log(P{a|x1}) = dot(wa,x1)
-                delta[t][j] = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
-            }else{
-                double p = -1e9;
-                for (int i=0; i<num_state; ++i){
-                    double w = delta[t-1][i] + sm->w[tran_start+num_state*i+j+1];
-		    if(w > p){
-			if(sparm->loss_function==0){
-                    	    if(t == num_obsrv-1 && j == y.phone[y.n-1] && i == y.phone[y.n-2] && is_same(track, y, j))
-			    {
-                            	if(w-1 > p)
-				{
-				    p = w-1;
-			    	    track[t][j] = i;
+	/* Viterbi */
+	// Forwarding
+	for (t = 0; t<num_obsrv; ++t)
+	for (int j = 0; j<num_state; ++j){
+		if (t == 0){
+			//log(P{a|x1}) = dot(wa,x1)
+			delta[t][j] = dot(&sm->w[j*num_feature + 1], x.utterance[t], num_feature);
+			if (sparm->dummy)
+				delta[t][j] += dot(&sm->w[tran_start - num_feature + 1], x.utterance[t], num_feature);
+		}
+		else{
+			double p = -1e9;
+			for (int i = 0; i<num_state; ++i){
+				double w = delta[t - 1][i] + sm->w[tran_start + num_state*i + j + 1];
+				if (w > p){
+					if (sparm->loss_function == 0){
+						if (t == num_obsrv - 1 && j == y.phone[y.n - 1] && i == y.phone[y.n - 2] && is_same(track, y, j))
+						{
+							if (w - 1 > p)
+							{
+								p = w - 1;
+								track[t][j] = i;
+							}
+						}
+						else{
+							p = w;
+							track[t][j] = i;
+						}
+					}
+					else{
+						p = w;
+						track[t][j] = i;
+					}
 				}
-			    }else{
-                                p = w;
-                                track[t][j] = i;
-                            }
-                	}else{
-			    p = w;
-			    track[t][j] = i;
 			}
-		    }
-                }
-                delta[t][j] = p + dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
-            }
-  	    /* handle non 0/1 loss */
-	    if(sparm->loss_function > 0){
-                if(y.phone[t] != j)
-                    delta[t][j]+=(float)1.0/num_obsrv;
-	    }
-    }
-    
-    // Back-tracking
-    double p = -1e9;
-    for (int j=0; j<num_state; ++j)
-        if (delta[num_obsrv-1][j] > p){
-            p = delta[num_obsrv-1][j];
-            ybar.phone[num_obsrv-1] = j;
-        }    
+			delta[t][j] = p + dot(&sm->w[j*num_feature + 1], x.utterance[t], num_feature);
+			if (sparm->dummy)
+				delta[t][j] += dot(&sm->w[tran_start - num_feature + 1], x.utterance[t], num_feature);
+		}
+		/* handle non 0/1 loss */
+		if (sparm->loss_function > 0){
+			if (y.phone[t] != j)
+				delta[t][j]++;
+		}
+	}
 
-    for (t=num_obsrv-1; t>0; --t)
-        ybar.phone[t-1] = track[t][ybar.phone[t]];
+	// Back-tracking
+	double p = -1e9;
+	for (int j = 0; j<num_state; ++j)
+	if (delta[num_obsrv - 1][j] > p){
+		p = delta[num_obsrv - 1][j];
+		ybar.phone[num_obsrv - 1] = j;
+	}
 
-    // Free memory
-    for(int i=0;i<num_obsrv;++i){
-        free(delta[i]);
-        free(track[i]);
-    }
-    free(delta);
-    free(track);
+	for (t = num_obsrv - 1; t>0; --t)
+		ybar.phone[t - 1] = track[t][ybar.phone[t]];
 
-    return(ybar);
+	// Free memory
+	for (int i = 0; i<num_obsrv; ++i){
+		free(delta[i]);
+		free(track[i]);
+	}
+	free(delta);
+	free(track);
+
+	return(ybar);
 }
 
 int         empty_label(LABEL y)
@@ -463,7 +497,6 @@ int         empty_label(LABEL y)
  
   return(0);
 }
-
 
 SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
 		 STRUCT_LEARN_PARM *sparm)
@@ -492,17 +525,17 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
      
   //SVECTOR *fvec=(SVECTOR*) malloc(sizeof(SVECTOR));
   //cout << "hey. \n"; 
-  WORD *TempWord = (WORD*) malloc(sizeof(WORD)*((sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)+1));
+  WORD *TempWord = (WORD*) malloc(sizeof(WORD)*(sm->sizePsi+1));
   int lastLabel=-1;
   int currentLabel=-1;
    
   
-  for(int i=1;i<(sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)+1;i++)
+  for(int i=1;i<sm->sizePsi+1;i++)
   {
           TempWord[i-1].wnum=i;
           TempWord[i-1].weight=0;
   }
-  TempWord[(sm->num_features)*(sm->num_phones)+(sm->num_phones)*(sm->num_phones)].wnum=0;
+  TempWord[sm->sizePsi].wnum=0;
   
   for(int i=0;i<x.n;i++)
   {
@@ -511,13 +544,18 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
            //cout <<x.utterance[i][0]<<endl; 
 
            TempWord[j+(sm->num_features)*y.phone[i]].weight+=x.utterance[i][j];
+		   if (sparm->dummy)
+			TempWord[j+(sm->num_features)*sm->num_phones].weight+=x.utterance[i][j];
 
            
    }  
            currentLabel=y.phone[i];
            if(lastLabel>=0)
            {
-           TempWord[(sm->num_features)*(sm->num_phones)+(sm->num_phones)*lastLabel+currentLabel].weight++; 
+			   if (sparm->dummy)
+					TempWord[(sm->num_features)*(sm->num_phones+1)+(sm->num_phones)*lastLabel+currentLabel].weight++; 
+			   else
+				   TempWord[(sm->num_features)*(sm->num_phones) + (sm->num_phones)*lastLabel + currentLabel].weight++;
            }
            lastLabel=currentLabel;     
   }
@@ -604,7 +642,7 @@ void        write_struct_model(char *file, STRUCTMODEL *sm,
 {
   /* Writes structural model sm to file file. */
   FILE *fp = fopen(file, "w");
-  fprintf(fp, "%ld\n", sm->sizePsi);
+  fprintf(fp, "%d %d", sparm->addOne, sparm->dummy);
   /*fprintf(fp, "%lf\n", sm->walpha);
   fprintf(fp, "%d\n", sm->num_features);
   fprintf(fp, "%d\n", sm->num_phones);
@@ -629,12 +667,22 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
   /* Reads structural model sm from file file. This function is used
      only in the prediction module, not in the learning module. */
      STRUCTMODEL sm;
-	 sm.sizePsi=SM_PSI_SIZE; /* replace by appropriate number of features */
-	 sm.num_features = SM_NUM_FEATURES;
-	 sm.num_phones = SM_NUM_PHONMES;
 	 sm.svm_model = (MODEL*)my_malloc(sizeof(MODEL));
      FILE *fp = fopen(file, "r");
-     fscanf(fp, "%ld", &sm.sizePsi);
+	 fscanf(fp, "%d %d", &sparm->addOne, &sparm->dummy);
+
+	 sm.sizePsi = SM_NUM_FEATURES*SM_NUM_PHONMES + SM_NUM_PHONMES*SM_NUM_PHONMES; /* replace by appropriate number of features */
+	 sm.num_features = SM_NUM_FEATURES;
+	 if (sparm->addOne == 1)
+	 {
+		 sm.sizePsi = (SM_NUM_FEATURES + 1)*SM_NUM_PHONMES + SM_NUM_PHONMES*SM_NUM_PHONMES;
+		 sm.num_features++;
+	 }
+	 if (sparm->dummy == 1)
+		 sm.sizePsi += sm.num_features;
+
+	 sm.num_phones = SM_NUM_PHONMES;
+
      fscanf(fp, "%ld", &sm.svm_model->kernel_parm.kernel_type);
      sm.w = (double*)my_malloc(sizeof(double)*(sm.sizePsi+1));
 	 int i;
