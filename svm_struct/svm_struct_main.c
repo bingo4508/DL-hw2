@@ -191,8 +191,8 @@ void read_input_parameters(int argc,char *argv[],char *trainfile,
       case '-': strcpy(struct_parm->custom_argv[struct_parm->custom_argc++],argv[i]);i++; strcpy(struct_parm->custom_argv[struct_parm->custom_argc++],argv[i]);break; 
       case 'v': i++; (*struct_verbosity)=atol(argv[i]); break;
       case 'y': i++; (*verbosity)=atol(argv[i]); break;
-	  case '0': i++; struct_parm->dummy = atol(argv[i]); break;
-	  case '1': i++; struct_parm->addOne = atol(argv[i]); break;
+	  case '0': struct_parm->dummy = atol(argv[i]); break;
+	  case '1': struct_parm->addOne = atol(argv[i]); break;
       default: printf("\nUnrecognized option %s!\n\n",argv[i]);
 	       print_help();
 	       exit(0);
