@@ -838,7 +838,9 @@ omp_set_num_threads(6);
 	       svmModel->sv_num-1,ceps,svmModel->maxdiff);
 
       rt_total+=MAX(get_runtime()-rt1,0);
-
+	  
+      if (numIt % 30 == 0)
+		  write_struct_model(sparm->modelfile, sm, sparm);
   } while(cached_constraint || (ceps > sparm->epsilon) || 
 	  finalize_iteration(ceps,cached_constraint,sample,sm,cset,alpha,sparm)
 	 );
