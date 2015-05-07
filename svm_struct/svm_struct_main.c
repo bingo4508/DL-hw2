@@ -128,6 +128,8 @@ void read_input_parameters(int argc,char *argv[],char *trainfile,
   struct_parm->newconstretrain=100;
   struct_parm->ccache_size=5;
   struct_parm->batch_size=100;
+  struct_parm->dummy = 0;
+  struct_parm->addOne = 0;
 
   strcpy (modelfile, "svm_struct_model");
   strcpy (learn_parm->predfile, "trans_predictions");
@@ -189,6 +191,8 @@ void read_input_parameters(int argc,char *argv[],char *trainfile,
       case '-': strcpy(struct_parm->custom_argv[struct_parm->custom_argc++],argv[i]);i++; strcpy(struct_parm->custom_argv[struct_parm->custom_argc++],argv[i]);break; 
       case 'v': i++; (*struct_verbosity)=atol(argv[i]); break;
       case 'y': i++; (*verbosity)=atol(argv[i]); break;
+	  case '0': struct_parm->dummy = atol(argv[i]); break;
+	  case '1': struct_parm->addOne = atol(argv[i]); break;
       default: printf("\nUnrecognized option %s!\n\n",argv[i]);
 	       print_help();
 	       exit(0);
@@ -351,6 +355,8 @@ void print_help()
   printf("                        0: zero/one loss\n");
   printf("                        ?: see below in application specific options\n");
   printf("                        (default %d)\n",DEFAULT_LOSS_FCT);
+  printf("         -0          -> Use Dummy.\n");
+  printf("         -1          -> Use Constant one.\n");
   printf("Optimization Options (see [2][5]):\n");
   printf("         -w [0,..,9] -> choice of structural learning algorithm (default %d):\n",(int)DEFAULT_ALG_TYPE);
   printf("                        0: n-slack algorithm described in [2]\n");
