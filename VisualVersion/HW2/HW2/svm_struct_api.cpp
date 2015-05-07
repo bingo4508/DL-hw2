@@ -459,7 +459,7 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
 		/* handle non 0/1 loss */
 		if (sparm->loss_function > 0){
 			if (y.phone[t] != j)
-				delta[t][j]++;
+				delta[t][j]+=1.0/num_obsrv;
 		}
 	}
 
@@ -570,7 +570,7 @@ SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm,
 double      loss(LABEL y, LABEL ybar, STRUCT_LEARN_PARM *sparm)
 {
   int i;
-  int s=0;
+  double s=0;
   /* loss for correct label y and predicted label ybar. The loss for
      y==ybar has to be zero. sparm->loss_function is set with the -l option. */
   if(sparm->loss_function == 0) { /* type 0 loss: 0/1 loss */
@@ -586,7 +586,7 @@ double      loss(LABEL y, LABEL ybar, STRUCT_LEARN_PARM *sparm)
        highest scoring label with the largest loss. */
         for(i=0;i<y.n;i++)
             if(y.phone[i] != ybar.phone[i])
-                s++;
+                s+=1.0/y.n;
         return s;
   }
 }

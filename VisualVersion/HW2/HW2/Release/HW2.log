@@ -1,9 +1,39 @@
-﻿已經開始建置於 2015/5/6 下午 11:26:03。
-     1>節點 2 (Build 目標) 上的專案 "D:\OneDrive\SourceTree\DeepLearning2015\HW2\VisualVersion\HW2\HW2\HW2.vcxproj"。
+﻿已經開始建置於 2015/5/7 下午 03:51:59。
+     1>節點 2 (Rebuild 目標) 上的專案 "D:\OneDrive\SourceTree\DeepLearning2015\HW2\VisualVersion\HW2\HW2\HW2.vcxproj"。
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /sdl /O2 /Oi /Oy- /GL /D _CRT_SECURE_NO_WARNINGS /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /openmp /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt svm_struct\svm_struct_classify.cpp svm_struct\svm_struct_main.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /sdl /O2 /Oi /Oy- /GL /D _CRT_SECURE_NO_WARNINGS /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /openmp /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt svm_light\pr_loqo\pr_loqo.cpp svm_light\svm_classify.cpp svm_light\svm_common.cpp svm_light\svm_hideo.cpp svm_light\svm_learn.cpp svm_light\svm_loqo.cpp svm_struct\svm_struct_classify.cpp svm_struct\svm_struct_common.cpp svm_struct\svm_struct_learn.cpp svm_struct\svm_struct_main.cpp svm_struct_api.cpp svm_struct_learn_custom.cpp
+         pr_loqo.cpp
+     1>svm_light\pr_loqo\pr_loqo.cpp(294): warning C4101: 'step' : 未參考的區域變數
+     1>svm_light\pr_loqo\pr_loqo.cpp(299): warning C4101: 'k' : 未參考的區域變數
+         svm_classify.cpp
+         svm_common.cpp
+     1>svm_light\svm_common.cpp(177): warning C4244: '=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_light\svm_common.cpp(320): warning C4244: '*=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_light\svm_common.cpp(326): warning C4244: '*=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_light\svm_common.cpp(334): warning C4244: '=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_light\svm_common.cpp(343): warning C4244: '*=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_light\svm_common.cpp(349): warning C4244: '*=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_light\svm_common.cpp(497): warning C4244: '*=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_light\svm_common.cpp(518): warning C4244: '=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_light\svm_common.cpp(527): warning C4244: '=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_light\svm_common.cpp(654): warning C4244: '*=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+         svm_hideo.cpp
+         svm_learn.cpp
+     1>svm_light\svm_learn.cpp(3560): warning C4244: '=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_light\svm_learn.cpp(3913): warning C4244: '=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_light\svm_learn.cpp(3960): warning C4244: '=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+         svm_loqo.cpp
          svm_struct_classify.cpp
+         svm_struct_common.cpp
+         svm_struct_learn.cpp
+     1>svm_struct\svm_struct_learn.cpp(278): warning C4244: '=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_struct\svm_struct_learn.cpp(519): warning C4244: '=' : 將 'double' 轉換為 'long'，由於類型不同，可能導致資料遺失
          svm_struct_main.cpp
+         svm_struct_api.cpp
+     1>svm_struct_api.cpp(546): warning C4244: '+=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_struct_api.cpp(548): warning C4244: '+=' : 將 'double' 轉換為 'float'，由於類型不同，可能導致資料遺失
+     1>svm_struct_api.cpp(829): warning C4065: switch 陳述式包含 'default'，但沒有 'case' 標籤
+         svm_struct_learn_custom.cpp
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"D:\OneDrive\SourceTree\DeepLearning2015\HW2\VisualVersion\HW2\Release\HW2.exe" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\OneDrive\SourceTree\DeepLearning2015\HW2\VisualVersion\HW2\Release\HW2.pdb" /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\OneDrive\SourceTree\DeepLearning2015\HW2\VisualVersion\HW2\Release\HW2.lib" /MACHINE:X86 /SAFESEH Release\pr_loqo.obj
          Release\svm_classify.obj
@@ -20,8 +50,8 @@
          正在產生程式碼
          已完成程式碼產生
          HW2.vcxproj -> D:\OneDrive\SourceTree\DeepLearning2015\HW2\VisualVersion\HW2\Release\HW2.exe
-     1>專案 "D:\OneDrive\SourceTree\DeepLearning2015\HW2\VisualVersion\HW2\HW2\HW2.vcxproj" (Build 目標) 建置完成。
+     1>專案 "D:\OneDrive\SourceTree\DeepLearning2015\HW2\VisualVersion\HW2\HW2\HW2.vcxproj" (Rebuild 目標) 建置完成。
 
 建置成功。
 
-經過時間 00:00:02.09
+經過時間 00:00:15.52
