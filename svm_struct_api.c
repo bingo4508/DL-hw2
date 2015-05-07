@@ -29,8 +29,8 @@
 using namespace std;
 
 
-#define SM_PSI_SIZE 5616
-#define SM_NUM_FEATURES 69
+#define SM_PSI_SIZE 7920
+#define SM_NUM_FEATURES 117
 #define SM_NUM_PHONMES 48
 
 /************ Utility ***********************************/
@@ -425,7 +425,7 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
   	    /* handle non 0/1 loss */
 	    if(sparm->loss_function > 0){
                 if(y.phone[t] != j)
-                    delta[t][j]+=(float)1.0/num_obsrv;
+                    delta[t][j]+=1.0/num_obsrv;
 	    }
     }
     
@@ -549,7 +549,7 @@ double      loss(LABEL y, LABEL ybar, STRUCT_LEARN_PARM *sparm)
         for(i=0;i<y.n;i++)
             if(y.phone[i] != ybar.phone[i])
                 s++;
-        return s;
+        return float(s)/y.n;
   }
 }
 
