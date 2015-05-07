@@ -26,14 +26,14 @@ def levenshtein(s, t):
 def load(fname):
     m = {}
     with open(fname, 'r') as f:
-	f.readline()	#header line
+        f.readline()    #header line
         for l in f:
-	    l=l.strip().split(',')
-	    m[l[0]] = l[1]
+            l=l.strip().split(',')
+            m[l[0]] = l[1]
     return m
 
 if len(sys.argv) < 3:
-    print "args: $answer $predict"
+    print("args: $answer $predict")
     sys.exit(1)
 
 answer = sys.argv[1]
@@ -47,6 +47,6 @@ d_s = 0
 for k,v in ans_map.items():
     d = levenshtein(v, pre_map[k])
     d_s += d
-    print "%s\t%d" %(k, d)
+    print("%s\t%d" %(k, d))
 
-print "\nAverage edit distance: %f" % (float(d_s)/len(ans_map))
+print("\nAverage edit distance: %f" % (float(d_s)/len(ans_map)))
