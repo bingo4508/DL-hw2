@@ -57,3 +57,13 @@ svm_struct_api.o: svm_struct_api.c svm_struct_api.h svm_struct_api_types.h svm_s
 
 svm_struct_learn_custom.o: svm_struct_learn_custom.c svm_struct_api.h svm_light/svm_common.h svm_struct_api_types.h svm_struct/svm_struct_common.h
 	$(CC) -c $(CFLAGS) svm_struct_learn_custom.c -o svm_struct_learn_custom.o
+run:
+	mkdir data
+	mkdir output
+	wget https://googledrive.com/host/0B90HhQ5Tx3n8elRpVVRMY0UxRjQ
+	mv 0B90HhQ5Tx3n8elRpVVRMY0UxRjQ data/train_normalized_hw1_merge.ark
+	wget https://googledrive.com/host/0B90HhQ5Tx3n8TG9BUHRXSXlnS3c
+	mv 0B90HhQ5Tx3n8TG9BUHRXSXlnS3c data/test_normalized_hw1.ark
+	./svm_empty_learn -c 100 -e 0.05 -l 1 -o 2 data/train_normalized_hw1_merge.ark output/model_hw1_linear_C_100
+	./svm_empty_classify data/test_normalized_hw1.ark output/model_hw1_linear_C_100 data/output.raw output/output.kaggle
+

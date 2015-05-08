@@ -642,7 +642,7 @@ void        write_struct_model(char *file, STRUCTMODEL *sm,
 {
   /* Writes structural model sm to file file. */
   FILE *fp = fopen(file, "w");
-  fprintf(fp, "%d %d", sparm->addOne, sparm->dummy);
+  fprintf(fp, "%d %d ", sparm->addOne, sparm->dummy);
   /*fprintf(fp, "%lf\n", sm->walpha);
   fprintf(fp, "%d\n", sm->num_features);
   fprintf(fp, "%d\n", sm->num_phones);
@@ -669,7 +669,7 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
      STRUCTMODEL sm;
 	 sm.svm_model = (MODEL*)my_malloc(sizeof(MODEL));
      FILE *fp = fopen(file, "r");
-	 fscanf(fp, "%d %d", &sparm->addOne, &sparm->dummy);
+	 fscanf(fp, "%d %d ", &sparm->addOne, &sparm->dummy);
 
 	 sm.sizePsi = SM_NUM_FEATURES*SM_NUM_PHONMES + SM_NUM_PHONMES*SM_NUM_PHONMES; /* replace by appropriate number of features */
 	 sm.num_features = SM_NUM_FEATURES;
