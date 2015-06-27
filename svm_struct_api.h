@@ -52,6 +52,9 @@ LABEL       find_most_violated_constraint_marginrescaling(PATTERN x, LABEL y,
 						     STRUCT_LEARN_PARM *sparm);
 LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm, 
 				    STRUCT_LEARN_PARM *sparm);
+void       classify_struct_example2(FILE *fp, PATTERN x, STRUCTMODEL *sm, 
+				    STRUCT_LEARN_PARM *sparm);
+
 int         empty_label(LABEL y);
 SVECTOR     *psi(PATTERN x, LABEL y, STRUCTMODEL *sm, 
 	        STRUCT_LEARN_PARM *sparm);

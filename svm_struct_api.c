@@ -22,15 +22,17 @@
 #include "svm_struct/svm_struct_common.h"
 #include "svm_struct_api.h"
 #include <omp.h>
+#include <time.h>
 
 #include <vector>
 #include <string>
+#include <algorithm>
 
 using namespace std;
 
 
-#define SM_PSI_SIZE 7920
-#define SM_NUM_FEATURES 117
+#define SM_PSI_SIZE 4608
+#define SM_NUM_FEATURES 48
 #define SM_NUM_PHONMES 48
 
 /************ Utility ***********************************/
@@ -40,6 +42,17 @@ double dot(double *x, double *y, int size){
     for(i=0;i<size;i++)
         s += x[i]*y[i];
     return s;
+}
+
+void *** new_3d_array(int dim, int rows, int cols, int size){
+    void ***a = (void ***)calloc(dim, sizeof(void**));
+    int i;
+    for(i = 0; i < dim; i++){
+        a[i] = (void **)calloc(rows, sizeof(void*));
+	for(int j=0; j<rows; j++)
+	    a[i][j] = calloc(cols, size);
+    }
+    return a;
 }
 
 void ** new_2d_array(int rows, int cols, int size){
@@ -331,6 +344,139 @@ LABEL       classify_struct_example(PATTERN x, STRUCTMODEL *sm,
     free(track);
 
     return y;
+}
+
+void       classify_struct_example2(FILE *fp, PATTERN x, STRUCTMODEL *sm,
+                                    STRUCT_LEARN_PARM *sparm)
+{
+  /* Finds the label yhat for pattern x that scores the highest
+     according to the linear evaluation function in sm, especially the
+     weights sm.w. The returned label is taken as the prediction of sm
+     for the pattern x. The weights correspond to the features defined
+     by psi() and range from index 1 to index sm->sizePsi. If the
+     function cannot find a label, it shall return an empty label as
+     recognized by the function empty_label(y). */
+
+
+    int num_state = sm->num_phones;
+    int num_obsrv = x.n;
+    int num_feature = sm->num_features;
+	int tran_start;
+	if (sparm->dummy)
+		tran_start = num_feature*(num_state+1);
+	else
+		tran_start = num_feature*num_state;
+
+    int t,j,i;
+
+    // Dynamic alloc memory
+    double ***delta = (double ***)new_3d_array(num_obsrv, num_state, sparm->kbest, sizeof(double));
+    int ***track = (int ***)new_3d_array(num_obsrv, num_state, sparm->kbest, sizeof(int));	//track state
+    int ***track2 = (int ***)new_3d_array(num_obsrv, num_state, sparm->kbest, sizeof(int));	//track kbest in a state
+//    int *merge_idx = (int *)new_1d_array(num_state, sizeof(int));
+    int merge_idx[48];	//static for openmp
+    LABEL **y;
+    y = (LABEL**)malloc(sparm->kbest*sizeof(*y));
+    for(int i=0;i<sparm->kbest;i++){
+	y[i] = (LABEL*)malloc(sizeof(LABEL));
+        y[i]->phone = (int *)new_1d_array(x.n, sizeof(int));
+        y[i]->kbest_idx = (int *)new_1d_array(x.n, sizeof(int));
+        y[i]->n = x.n;
+        y[i]->id = (char *)new_1d_array(30, sizeof(char));
+        strcpy(y[i]->id, x.id);
+    }
+
+    /* Viterbi */
+    // Forwarding
+    for (t=0; t<num_obsrv; ++t){
+#pragma omp parallel for private (merge_idx)
+        for (int j=0; j<num_state; ++j){
+            if (t == 0){
+                //log(P{a|x1}) = dot(wa,x1
+		delta[t][j][0] = dot(&sm->w[j*num_feature + 1], x.utterance[t], num_feature);
+            }else{
+		double self_p = dot(&sm->w[j*num_feature+1], x.utterance[t], num_feature);
+	        // Initialize merge index
+    		for(int i=0;i<num_state;i++)
+    			merge_idx[i] = 0;
+		// Find k best
+		for(int m=0; m<sparm->kbest; m++){
+			double max_value = -10000;
+			int max_index;
+			// Merge sort to find the best 1
+			for (i=0; i<num_state; ++i){
+			    double w = delta[t-1][i][merge_idx[i]] + sm->w[tran_start+num_state*i+j+1];
+			    if(w > max_value){
+				max_value = w;
+				max_index = i;
+			    }			    
+			}
+			delta[t][j][m] = max_value + self_p;
+			track[t][j][m] = max_index;
+			track2[t][j][m] = merge_idx[max_index];
+
+			// Move pointer
+			merge_idx[max_index]++;
+		}
+#ifdef DEBUG
+	printf("t:%d\tj:%d\tp:%f\tdot:%f\n",t,j,p,dot(&sm->w[j*num_feature], x.utterance[t], num_feature));
+#endif
+            }
+        }
+    }
+    // Back-tracking
+
+    // Initialize merge index
+    for(int i=0;i<num_state;i++)
+    	merge_idx[i] = 0;
+    // Find k best from the last
+    for(int m=0; m<sparm->kbest; m++){
+	double max_value = -1000;
+	int max_index;
+	// Merge sort to find the best 1 
+	for (i=0; i<num_state; ++i){
+	    if(delta[num_obsrv-1][i][merge_idx[i]] > max_value){
+		max_value = delta[num_obsrv-1][i][merge_idx[i]];
+		max_index = i; 
+	    }
+	}
+	y[m]->phone[num_obsrv-1] = max_index;
+	y[m]->kbest_idx[num_obsrv-1] = merge_idx[max_index];
+	merge_idx[max_index]++;
+    }
+    for(int m=0; m<sparm->kbest; m++){
+	for(int t=num_obsrv-1; t>0; --t){
+	    y[m]->phone[t-1] = track[t][y[m]->phone[t]][y[m]->kbest_idx[t]];
+	    y[m]->kbest_idx[t-1] = track2[t][y[m]->phone[t]][y[m]->kbest_idx[t]];
+	}
+    }
+    // Free memory
+    for(int i=0;i<num_obsrv;++i){
+	for(int j=0;j<num_state;++j){
+	    free(delta[i][j]);
+	    free(track[i][j]);
+	    free(track2[i][j]);
+	}
+	free(delta[i]);
+	free(track[i]);
+	free(track2[i]);
+    }
+    free(delta);
+    free(track);
+    free(track2);
+//    free(merge_idx);
+
+
+    // Write label
+    int map_48_39_idx[] = { 0, 22, 29, 1, 13, 37, 2, 0, 22, 8, 18, 4, 6, 2, 17, 37, 30, 24, 36, 39, 37, 27, 36, 32, 11, 37, 31, 21, 25, 12, 7, 10, 20, 19, 26, 28, 27, 29, 40, 33, 35, 34, 38, 44, 42, 45, 46, 41 };
+    for(int m=0;m<sparm->kbest;m++){
+	    fprintf(fp, "%s %d ", y[m]->id, y[m]->n);
+	    for (int i = 0; i < y[m]->n; i++){
+//		printf("%d\n",y[m]->phone[i]);
+		fprintf(fp, "%d ", map_48_39_idx[y[m]->phone[i]]);
+	    }
+	    fprintf(fp, "\n");
+    }
 }
 
 LABEL       find_most_violated_constraint_slackrescaling(PATTERN x, LABEL y, 
@@ -695,7 +841,8 @@ STRUCTMODEL read_struct_model(char *file, STRUCT_LEARN_PARM *sparm)
 void        write_label(FILE *fp, LABEL y)
 {
   /* Writes label y to file handle fp. */
-  int map_48_39_idx[] = { 0, 1, 2, 0, 4, 2, 6, 1, 8, 37, 10, 11, 12, 13, 27, 29, 37, 17, 18, 19, 20, 21, 22, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 37, 44, 45, 46, 36 };
+//  int map_48_39_idx[] = { 0, 1, 2, 0, 4, 2, 6, 1, 8, 37, 10, 11, 12, 13, 27, 29, 37, 17, 18, 19, 20, 21, 22, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 37, 44, 45, 46, 36 };
+  int map_48_39_idx[] = { 0, 22, 29, 1, 13, 37, 2, 0, 22, 8, 18, 4, 6, 2, 17, 37, 30, 24, 36, 39, 37, 27, 36, 32, 11, 37, 31, 21, 25, 12, 7, 10, 20, 19, 26, 28, 27, 29, 40, 33, 35, 34, 38, 44, 42, 45, 46, 41 };
   fprintf(fp, "%s %d ", y.id, y.n);
   int i;
   for (i = 0; i < y.n; i++)

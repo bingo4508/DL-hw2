@@ -65,6 +65,7 @@ typedef struct label {
   char *id;
   int n;
   int *phone;
+  int *kbest_idx;
 } LABEL;
 
 typedef struct structmodel {
@@ -104,6 +105,7 @@ typedef struct struct_learn_parm {
 				  functions via -l command line
 				  option */
   /* further parameters that are passed to init_struct_model() */
+  int kbest;			/* For ASR */
   int add_your_variables_here;
   int dummy;				/* 1 -> dummy, 0 -> no dummy */
   int addOne;				/* 1 -> add one in each fbank, 0 -> no add one in each fbank */

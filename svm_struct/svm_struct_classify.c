@@ -30,7 +30,9 @@ extern "C" {
 char testfile[200];
 char modelfile[200];
 char predictionsfile[200];
+char nbest_predictionsfile[205];
 char answerFile[200];
+char nbest_answerFile[205];
 
 void read_input_parameters(int, char **, char *, char *, char *, char *, 
 			   STRUCT_LEARN_PARM *, long*, long *);
@@ -43,7 +45,7 @@ int main (int argc, char* argv[])
   long i;
   double t1,runtime=0;
   double avgloss=0,l;
-  FILE *predfl;
+  FILE *predfl, *nbest_predfl;
   STRUCTMODEL model; 
   STRUCT_LEARN_PARM sparm;
   STRUCT_TEST_STATS teststats;
@@ -84,12 +86,20 @@ int main (int argc, char* argv[])
   if ((predfl = fopen (predictionsfile, "w")) == NULL)
   { perror (predictionsfile); exit (1); }
 
+  sprintf(nbest_predictionsfile, "%s.%dbest", predictionsfile,sparm.kbest);
+  if ((nbest_predfl = fopen (nbest_predictionsfile, "w")) == NULL)
+  { perror (nbest_predictionsfile); exit (1); }
+
+
   for(i=0;i<testsample.n;i++) {
     t1=get_runtime();
     y=classify_struct_example(testsample.examples[i].x,&model,&sparm);
     runtime+=(get_runtime()-t1);
 
     write_label(predfl,y);
+
+    classify_struct_example2(nbest_predfl,testsample.examples[i].x,&model,&sparm);
+
     l=loss(testsample.examples[i].y,y,&sparm);
     avgloss+=l;
     if(l == 0) 
@@ -111,7 +121,12 @@ int main (int argc, char* argv[])
   fclose(predfl);
   
   FILE* predf2 = fopen(predictionsfile, "r");
+  FILE* nbest_predf2 = fopen(nbest_predictionsfile, "r");
+
   outputResult(predf2, answerFile);
+
+  sprintf(nbest_answerFile, "%s.%dbest", answerFile, sparm.kbest);
+  outputResult(nbest_predf2, nbest_answerFile);
   fclose(predf2);
   
   if(struct_verbosity>=1) {
@@ -154,6 +169,7 @@ void read_input_parameters(int argc,char *argv[],char *testfile,
       case '-': strcpy(struct_parm->custom_argv[struct_parm->custom_argc++],argv[i]);i++; strcpy(struct_parm->custom_argv[struct_parm->custom_argc++],argv[i]);break; 
       case 'v': i++; (*struct_verbosity)=atol(argv[i]); break;
       case 'y': i++; (*verbosity)=atol(argv[i]); break;
+      case 'K': i++; struct_parm->kbest=atol(argv[i]); break;
       default: printf("\nUnrecognized option %s!\n\n",argv[i]);
 	       print_help();
 	       exit(0);
